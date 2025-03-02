@@ -1,0 +1,117 @@
+{
+  "name": "@repo/ui",
+  "version": "0.0.0",
+  "private": true,
+  "keywords": [
+    "bun"
+  ],
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "development": {
+        "types": "./src/index.tsx",
+        "import": "./src/index.tsx"
+      },
+      "import": {
+        "types": "./dist/es/index.d.mts",
+        "default": "./dist/es/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./components/styled": {
+      "development": {
+        "types": "./src/components/styled/index.tsx",
+        "import": "./src/components/styled/index.tsx"
+      },
+      "import": {
+        "types": "./dist/es/components/styled.d.mts",
+        "default": "./dist/es/components/styled.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/components/styled.d.ts",
+        "default": "./dist/cjs/components/styled.js"
+      }
+    },
+    "./components": {
+      "development": {
+        "types": "./src/components/index.tsx",
+        "import": "./src/components/index.tsx"
+      },
+      "import": {
+        "types": "./dist/es/components.d.mts",
+        "default": "./dist/es/components.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/components.d.ts",
+        "default": "./dist/cjs/components.js"
+      }
+    },
+    "./counter-button": {
+      "development": {
+        "types": "./src/counter-button/index.tsx",
+        "import": "./src/counter-button/index.tsx"
+      },
+      "import": {
+        "types": "./dist/es/counter-button.d.mts",
+        "default": "./dist/es/counter-button.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/counter-button.d.ts",
+        "default": "./dist/cjs/counter-button.js"
+      }
+    },
+    "./link": {
+      "development": {
+        "types": "./src/link/index.tsx",
+        "import": "./src/link/index.tsx"
+      },
+      "import": {
+        "types": "./dist/es/link.d.mts",
+        "default": "./dist/es/link.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/link.d.ts",
+        "default": "./dist/cjs/link.js"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "src/*"
+      ]
+    }
+  },
+  "files": [
+    "dist/**",
+    "dist"
+  ],
+  "scripts": {
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@radix-ui/react-select": "^2.1.6",
+    "@repo/design": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.475.0",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.12.0",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

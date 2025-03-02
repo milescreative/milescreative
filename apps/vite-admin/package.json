@@ -1,0 +1,37 @@
+{
+  "name": "vite-admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && cp serve.ts dist/",
+    "build:bun": "bunx --bun vite build && bun build serve.ts --outdir dist --target bun",
+    "check-types": "tsc --noEmit",
+    "dev": "vite --host 0.0.0.0 --port 3001 --clearScreen false",
+    "dev:bun": "bunx --bun vite --host 0.0.0.0 --port 3001 --clearScreen false",
+    "lint": "eslint src/ --max-warnings 0",
+    "preview": "vite preview",
+    "start": "bun dist/serve.js"
+  },
+  "dependencies": {
+    "@repo/design": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.0.9",
+    "bun": "^1.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.9"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/bun": "^1.2.2",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.3",
+    "vite": "^5.4.14",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

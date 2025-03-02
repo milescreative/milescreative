@@ -1,0 +1,36 @@
+{
+  "name": "tanstack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bunx --bun vinxi build --preset=bun",
+    "dev": "bunx --bun vinxi dev --port 3004 --preset=bun",
+    "start": "bunx --bun vinxi start --port 3004"
+  },
+  "dependencies": {
+    "@repo/design": "workspace:*",
+    "@tanstack/react-router": "^1.112.0",
+    "@tanstack/react-start": "^1.112.1",
+    "@tanstack/router-devtools": "^1.112.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "redaxios": "^0.5.1",
+    "tailwind-merge": "^3.0.2",
+    "vinxi": "0.5.3"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.9",
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/bun": "^1.2.4",
+    "@types/node": "^22.13.8",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "eslint": "^9.21.0",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.8.2",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

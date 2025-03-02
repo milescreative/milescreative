@@ -1,0 +1,24 @@
+{
+  "name": "@repo/design",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "exports": {
+    "./globals": "./index.css"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {},
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.0.9",
+    "postcss": "^8.5.2",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss": "^4.0.9",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

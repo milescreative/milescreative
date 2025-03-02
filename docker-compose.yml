@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  next-app:
+    image: next-docker-test-2
+    build:
+      context: .
+      dockerfile: dockerfiles/next.dockerfile
+      args:
+        - BUILDPLATFORM=${BUILDPLATFORM:-linux/amd64}
+        - TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+    platform: ${TARGETPLATFORM:-linux/amd64}
+    ports:
+      - '3002:3002'
+    environment:
+      - NODE_ENV=production
+
+  vite-admin:
+    image: vite-admin-docker-test-2
+    build:
+      context: .
+      dockerfile: dockerfiles/vite-admin.dockerfile
+      args:
+        - BUILDPLATFORM=${BUILDPLATFORM:-linux/amd64}
+        - TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+    platform: ${TARGETPLATFORM:-linux/amd64}
+    ports:
+      - '3000:3000'
+    restart: always
+
+  astro:
+    image: astro-docker-test-2
+    build:
+      context: .
+      dockerfile: dockerfiles/astro.dockerfile
+      args:
+        - BUILDPLATFORM=${BUILDPLATFORM:-linux/amd64}
+        - TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+    platform: ${TARGETPLATFORM:-linux/amd64}
+    ports:
+      - '3001:3001'
+    restart: always
+
+  hono-api:
+    image: hono-api-docker-test-2
+    build:
+      context: .
+      dockerfile: dockerfiles/hono-api.dockerfile
+      args:
+        - PORT=3003
+        - BUILDPLATFORM=${BUILDPLATFORM:-linux/amd64}
+        - TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+    platform: ${TARGETPLATFORM:-linux/amd64}
+    ports:
+      - '3003:3003'
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+  tanstack:
+    image: tanstack-docker-test-2
+    build:
+      context: .
+      dockerfile: dockerfiles/tanstack.dockerfile
+      args:
+        - BUILDPLATFORM=${BUILDPLATFORM:-linux/amd64}
+        - TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
+    platform: ${TARGETPLATFORM:-linux/amd64}
+    ports:
+      - '3004:3004'
+    environment:
+      - NODE_ENV=production
+      - SERVER_PRESET=bun
+    restart: always

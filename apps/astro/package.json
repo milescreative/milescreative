@@ -1,0 +1,30 @@
+{
+  "name": "astro",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "astro": "astro",
+    "build": "astro build && cp serve.ts dist/",
+    "build:bun": "bunx --bun astro build && bun build serve.ts --outdir dist --target bun",
+    "dev": "astro dev",
+    "dev:bun": "bun run serve.ts",
+    "preview": "astro preview",
+    "start": "bun run ./dist/serve.ts"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.2.0",
+    "@repo/design": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.0.9",
+    "astro": "^5.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.9",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.2",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4"
+  }
+}

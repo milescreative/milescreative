@@ -1,0 +1,22 @@
+{
+  "extends": "@repo/typescript-config/vite.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@admin/*": ["src/*"],
+      "@repo/ui/*": ["../../packages/ui/src/*"],
+      "@repo/ui": ["../../packages/ui/src/index.ts"],
+      "@ui/*": ["../../packages/ui/src/*"],
+      "@repo/logger/*": ["../../packages/logger/src/*"],
+      "@repo/logger": ["../../packages/logger/src/index.ts"],
+      "@repo/db/*": ["../../packages/db/src/*"],
+      "@repo/db": ["../../packages/db/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}
