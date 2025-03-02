@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/base.json",
+  "extends": "@milescreative/typescript-config/base.json",
   "compilerOptions": {
     "lib": ["ES2021"],
     "outDir": "./dist",

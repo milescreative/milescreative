@@ -1,6 +1,6 @@
 {
   "exclude": ["node_modules"],
-  "extends": "@repo/typescript-config/nextjs.json",
+  "extends": "@milescreative/typescript-config/nextjs.json",
   "compilerOptions": {
     "outDir": "dist",
     "plugins": [
@@ -11,10 +11,10 @@
     "baseUrl": ".",
     "paths": {
       "@storefront/*": ["src/*"],
-      "@repo/logger/*": ["../../packages/logger/src/*"],
-      "@repo/logger": ["../../packages/logger/src/index.ts"],
-      "@repo/ui": ["../../packages/ui/src/index.tsx"],
-      "@repo/ui/*": ["../../packages/ui/src/*"],
+      "@milescreative/logger/*": ["../../packages/logger/src/*"],
+      "@milescreative/logger": ["../../packages/logger/src/index.ts"],
+      "@milescreative/ui": ["../../packages/ui/src/index.tsx"],
+      "@milescreative/ui/*": ["../../packages/ui/src/*"],
       "@ui/*": ["../../packages/ui/src/*"]
     },
     "target": "ES2017",

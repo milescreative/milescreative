@@ -1,4 +1,4 @@
-import { log } from '@repo/logger'
+import { log } from '@milescreative/logger'
 
 import { createServer } from './server'
 

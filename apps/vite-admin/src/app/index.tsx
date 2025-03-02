@@ -1,8 +1,8 @@
 import './styles.css'
 
-import { SelectDemo } from '@repo/ui/components/styled'
-import { CounterButton } from '@repo/ui/counter-button'
-import { Link } from '@repo/ui/link'
+import { SelectDemo } from '@milescreative/ui/components/styled'
+import { CounterButton } from '@milescreative/ui/counter-button'
+import { Link } from '@milescreative/ui/link'
 
 function App() {
   return (

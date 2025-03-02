@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import { glob } from 'glob'
 
 const WORKSPACE_SETTINGS = {
-  repo_name: '@repo', // CHANGE BY RUNNING PACKAGE.JSON SCRIPT
+  repo_name: '@milescreative', // CHANGE BY RUNNING PACKAGE.JSON SCRIPT
   preferred_runtime: 'bun',
 }
 

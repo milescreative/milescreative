@@ -1,4 +1,4 @@
-import { test_result } from '@repo/db'
+import { test_result } from '@milescreative/db'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'

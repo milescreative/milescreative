@@ -1,16 +1,16 @@
 {
-  "extends": "@repo/typescript-config/vite.json",
+  "extends": "@milescreative/typescript-config/vite.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
       "@admin/*": ["src/*"],
-      "@repo/ui/*": ["../../packages/ui/src/*"],
-      "@repo/ui": ["../../packages/ui/src/index.ts"],
+      "@milescreative/ui/*": ["../../packages/ui/src/*"],
+      "@milescreative/ui": ["../../packages/ui/src/index.ts"],
       "@ui/*": ["../../packages/ui/src/*"],
-      "@repo/logger/*": ["../../packages/logger/src/*"],
-      "@repo/logger": ["../../packages/logger/src/index.ts"],
-      "@repo/db/*": ["../../packages/db/src/*"],
-      "@repo/db": ["../../packages/db/src/index.ts"]
+      "@milescreative/logger/*": ["../../packages/logger/src/*"],
+      "@milescreative/logger": ["../../packages/logger/src/index.ts"],
+      "@milescreative/db/*": ["../../packages/db/src/*"],
+      "@milescreative/db": ["../../packages/db/src/index.ts"]
     }
   },
   "include": ["src"],

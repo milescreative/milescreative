@@ -8,7 +8,7 @@
     "start": "bunx --bun vinxi start --port 3004"
   },
   "dependencies": {
-    "@repo/design": "workspace:*",
+    "@milescreative/design": "workspace:*",
     "@tanstack/react-router": "^1.112.0",
     "@tanstack/react-start": "^1.112.1",
     "@tanstack/router-devtools": "^1.112.0",
@@ -20,8 +20,8 @@
     "vinxi": "0.5.3"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@milescreative/eslint-config": "workspace:*",
+    "@milescreative/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.0.9",
     "@tailwindcss/vite": "^4.0.9",
     "@types/bun": "^1.2.4",

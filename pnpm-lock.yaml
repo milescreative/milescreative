@@ -15,7 +15,7 @@ importers:
         specifier: ^8.1.0
         version: 8.1.0
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       glob:
         specifier: ^11.0.1
@@ -33,7 +33,7 @@ importers:
         specifier: ^2.4.0
         version: 2.4.4
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
   apps/astro:
@@ -41,10 +41,10 @@ importers:
       '@astrojs/react':
         specifier: ^4.2.0
         version: 4.2.1(@types/node@22.13.8)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(jiti@2.4.2)(lightningcss@1.29.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(tsx@4.19.3)
-      '@repo/design':
+      '@milescreative/design':
         specifier: workspace:*
         version: link:../../packages/design
-      '@repo/ui':
+      '@milescreative/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/vite':
@@ -67,7 +67,7 @@ importers:
         version: 5.1.4(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3))
     devDependencies:
       '@types/bun':
-        specifier: ^1.2.2
+        specifier: ^1.2.4
         version: 1.2.4
       '@types/react':
         specifier: ^19.0.10
@@ -78,41 +78,41 @@ importers:
 
   apps/hono-api:
     dependencies:
-      '@repo/db':
+      '@milescreative/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@repo/logger':
+      '@milescreative/logger':
         specifier: workspace:*
         version: link:../../packages/logger
       bun:
-        specifier: ^1.2.2
+        specifier: ^1.2.4
         version: 1.2.4
       hono:
         specifier: ^4.6.20
         version: 4.7.2
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config-typescript
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
   apps/next:
     dependencies:
-      '@repo/design':
+      '@milescreative/design':
         specifier: workspace:*
         version: link:../../packages/design
-      '@repo/logger':
+      '@milescreative/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      '@repo/ui':
+      '@milescreative/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/postcss':
@@ -134,14 +134,14 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config-typescript
       '@types/node':
-        specifier: ^22.12.0
+        specifier: ^22.13.8
         version: 22.13.8
       '@types/react':
         specifier: ^19.0.10
@@ -150,15 +150,15 @@ importers:
         specifier: ^19.0.4
         version: 19.0.4(@types/react@19.0.10)
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
   apps/tanstack:
     dependencies:
-      '@repo/design':
+      '@milescreative/design':
         specifier: workspace:*
         version: link:../../packages/design
       '@tanstack/react-router':
@@ -189,10 +189,10 @@ importers:
         specifier: 0.5.3
         version: 0.5.3(@types/node@22.13.8)(db0@0.2.4)(ioredis@5.5.0)(jiti@2.4.2)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config-typescript
       '@tailwindcss/postcss':
@@ -228,10 +228,10 @@ importers:
 
   apps/vite-admin:
     dependencies:
-      '@repo/design':
+      '@milescreative/design':
         specifier: workspace:*
         version: link:../../packages/design
-      '@repo/ui':
+      '@milescreative/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/vite':
@@ -250,14 +250,14 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config-typescript
       '@types/bun':
-        specifier: ^1.2.2
+        specifier: ^1.2.4
         version: 1.2.4
       '@types/react':
         specifier: ^19.0.10
@@ -269,10 +269,10 @@ importers:
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.14(@types/node@22.13.8)(lightningcss@1.29.1)(terser@5.39.0))
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
       vite:
         specifier: ^5.4.14
@@ -297,7 +297,7 @@ importers:
         specifier: ^15.1.6
         version: 15.2.0
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       eslint-config-prettier:
         specifier: ^10.0.1
@@ -318,7 +318,7 @@ importers:
         specifier: ^15.14.0
         version: 15.15.0
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
       typescript-eslint:
         specifier: ^8.22.0
@@ -328,20 +328,20 @@ importers:
 
   packages/db:
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../config-typescript
       '@types/bun':
-        specifier: ^1.2.2
+        specifier: ^1.2.4
         version: 1.2.4
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
   packages/design:
@@ -353,7 +353,7 @@ importers:
         specifier: ^8.5.2
         version: 8.5.3
       tailwind-merge:
-        specifier: ^3.0.1
+        specifier: ^3.0.2
         version: 3.0.2
       tailwindcss:
         specifier: ^4.0.9
@@ -368,33 +368,33 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../config-typescript
       '@types/node':
-        specifier: ^22.12.0
+        specifier: ^22.13.8
         version: 22.13.8
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       tsup:
         specifier: ^8.0.1
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
   packages/ui:
     dependencies:
+      '@milescreative/design':
+        specifier: workspace:*
+        version: link:../design
       '@radix-ui/react-select':
         specifier: ^2.1.6
         version: 2.1.6(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@repo/design':
-        specifier: workspace:*
-        version: link:../design
       '@types/react':
         specifier: ^19.0.0
         version: 19.0.10
@@ -417,23 +417,23 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       tailwind-merge:
-        specifier: ^3.0.1
+        specifier: ^3.0.2
         version: 3.0.2
     devDependencies:
-      '@repo/eslint-config':
+      '@milescreative/eslint-config':
         specifier: workspace:*
         version: link:../config-eslint
-      '@repo/typescript-config':
+      '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../config-typescript
       '@types/node':
-        specifier: ^22.12.0
+        specifier: ^22.13.8
         version: 22.13.8
       eslint:
-        specifier: ^9.20.0
+        specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ^5.8.2
         version: 5.8.2
 
 packages:

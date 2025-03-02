@@ -1,15 +1,15 @@
 {
-  "extends": "@repo/typescript-config/base.json",
+  "extends": "@milescreative/typescript-config/base.json",
   "compilerOptions": {
     "lib": ["ES2015"],
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
       "@api/*": ["src/*"],
-      "@repo/logger/*": ["../../packages/logger/src/*"],
-      "@repo/logger": ["../../packages/logger/src/index.ts"],
-      "@repo/db/*": ["../../packages/db/src/*"],
-      "@repo/db": ["../../packages/db/src/index.ts"]
+      "@milescreative/logger/*": ["../../packages/logger/src/*"],
+      "@milescreative/logger": ["../../packages/logger/src/index.ts"],
+      "@milescreative/db/*": ["../../packages/db/src/*"],
+      "@milescreative/db": ["../../packages/db/src/index.ts"]
     }
   },
   "exclude": ["node_modules"],

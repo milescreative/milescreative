@@ -7,8 +7,8 @@
     "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
-      "@repo/ui/*": ["../../packages/ui/src/*"],
-      "@repo/ui": ["../../packages/ui/src/index.ts"],
+      "@milescreative/ui/*": ["../../packages/ui/src/*"],
+      "@milescreative/ui": ["../../packages/ui/src/index.ts"],
       "@ui/*": ["../../packages/ui/src/*"]
     }
   }

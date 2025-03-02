@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import '@repo/design/globals';
+@import '@milescreative/design/globals';
 
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,

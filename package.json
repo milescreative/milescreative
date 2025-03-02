@@ -1,5 +1,5 @@
 {
-  "name": "@repo/workspace",
+  "name": "@milescreative/workspace",
   "private": true,
   "scripts": {
     "@up": "pnpm up --recursive",
@@ -17,13 +17,13 @@
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@types/glob": "^8.1.0",
-    "eslint": "^9.20.0",
+    "eslint": "^9.21.0",
     "glob": "^11.0.1",
     "prettier": "^3.5.2",
     "prettier-plugin-packagejson": "^2.5.8",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "turbo": "^2.4.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   },
   "packageManager": "pnpm@9.15.5",
   "engines": {

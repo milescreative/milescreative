@@ -1,6 +1,6 @@
 'use client'
 
-import { SelectDemo } from '@repo/ui/components/styled'
+import { SelectDemo } from '@milescreative/ui/components/styled'
 
 export default function TestPage() {
   return (
