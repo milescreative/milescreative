@@ -13,12 +13,14 @@
   "dependencies": {
     "@milescreative/db": "workspace:*",
     "@milescreative/logger": "workspace:*",
-    "bun": "^1.2.4",
-    "hono": "^4.6.20"
+    "@milescreative/rate-limiter": "workspace:*",
+    "hono": "^4.6.20",
+    "ioredis": "^5.5.0"
   },
   "devDependencies": {
     "@milescreative/eslint-config": "workspace:*",
     "@milescreative/typescript-config": "workspace:*",
+    "@types/bun": "^1.2.4",
     "eslint": "^9.21.0",
     "typescript": "^5.8.2"
   }

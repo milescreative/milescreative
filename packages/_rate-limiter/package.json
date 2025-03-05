@@ -1,0 +1,53 @@
+{
+  "name": "@milescreative/rate-limiter",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "development": {
+        "types": "./src/index.ts",
+        "import": "./src/index.ts"
+      },
+      "import": {
+        "types": "./dist/es/index.d.ts",
+        "default": "./dist/es/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/es/index.js",
+  "module": "./dist/es/index.js",
+  "types": "./dist/es/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "src/*"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "ioredis": "^5.5.0"
+  },
+  "devDependencies": {
+    "@milescreative/eslint-config": "workspace:*",
+    "@milescreative/logger": "workspace:*",
+    "@milescreative/typescript-config": "workspace:*",
+    "@types/bun": "^1.2.4",
+    "eslint": "^9.21.0",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}

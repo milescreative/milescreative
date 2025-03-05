@@ -1,0 +1,16 @@
+{
+  "extends": "@milescreative/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["ESNext"],
+    "outDir": "./dist",
+    "types": ["node"],
+    "module": "ESNext",
+    "paths": {
+      "@milescreative/logger/*": ["../../packages/logger/src/*"],
+      "@milescreative/logger": ["../../packages/logger/src/index.ts"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}

@@ -84,12 +84,15 @@ importers:
       '@milescreative/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      bun:
-        specifier: ^1.2.4
-        version: 1.2.4
+      '@milescreative/rate-limiter':
+        specifier: workspace:*
+        version: link:../../packages/_rate-limiter
       hono:
         specifier: ^4.6.20
         version: 4.7.2
+      ioredis:
+        specifier: ^5.5.0
+        version: 5.5.0
     devDependencies:
       '@milescreative/eslint-config':
         specifier: workspace:*
@@ -97,6 +100,9 @@ importers:
       '@milescreative/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config-typescript
+      '@types/bun':
+        specifier: ^1.2.4
+        version: 1.2.4
       eslint:
         specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
@@ -280,6 +286,31 @@ importers:
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.8.2)(vite@5.4.14(@types/node@22.13.8)(lightningcss@1.29.1)(terser@5.39.0))
+
+  packages/_rate-limiter:
+    dependencies:
+      ioredis:
+        specifier: ^5.5.0
+        version: 5.5.0
+    devDependencies:
+      '@milescreative/eslint-config':
+        specifier: workspace:*
+        version: link:../config-eslint
+      '@milescreative/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@milescreative/typescript-config':
+        specifier: workspace:*
+        version: link:../config-typescript
+      '@types/bun':
+        specifier: ^1.2.4
+        version: 1.2.4
+      eslint:
+        specifier: ^9.21.0
+        version: 9.21.0(jiti@2.4.2)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
 
   packages/config-eslint:
     dependencies:

@@ -9,7 +9,11 @@
       "@milescreative/logger/*": ["../../packages/logger/src/*"],
       "@milescreative/logger": ["../../packages/logger/src/index.ts"],
       "@milescreative/db/*": ["../../packages/db/src/*"],
-      "@milescreative/db": ["../../packages/db/src/index.ts"]
+      "@milescreative/db": ["../../packages/db/src/index.ts"],
+      "@milescreative/rate-limiter/*": ["../../packages/_rate-limiter/src/*"],
+      "@milescreative/rate-limiter": [
+        "../../packages/_rate-limiter/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules"],
