@@ -3,6 +3,7 @@ import { log } from '@milescreative/logger'
 import {
   createRedisClient,
   createUserRateLimiter,
+  FixedWindowRateLimiter,
   rateLimiterMiddleware,
 } from '@milescreative/rate-limiter'
 import { Hono } from 'hono'
@@ -29,28 +30,33 @@ export const createServer = (): Hono => {
       windowSeconds: 10, // Per minute
     }
   )
+  const fixedWindowRateLimiter = new FixedWindowRateLimiter({
+    limit: 10,
+    windowSize: '10',
+    prefix: 'myapp',
+  })
 
   app
     .use('*', logger())
     .use('*', cors())
-    .use('/rate-limit', async (c, next) => {
-      const headers = c.req.header()
-      let modifiedHeaders = headers
-      if (process.env.NODE_ENV !== 'production') {
-        modifiedHeaders = {
-          ...headers,
-          'x-forwarded-for': '127.0.0.1',
-        }
-      }
+    // .use('/rate-limit', async (c, next) => {
+    //   const headers = c.req.header()
+    //   let modifiedHeaders = headers
+    //   if (process.env.NODE_ENV !== 'production') {
+    //     modifiedHeaders = {
+    //       ...headers,
+    //       'x-forwarded-for': '127.0.0.1',
+    //     }
+    //   }
 
-      log(`Rate limit middleware`)
-      log(JSON.stringify(modifiedHeaders))
-      return rateLimiterMiddleware(
-        { headers: modifiedHeaders, res: c.res },
-        next,
-        rateLimiter
-      )
-    })
+    //   log(`Rate limit middleware`)
+    //   log(JSON.stringify(modifiedHeaders))
+    //   return rateLimiterMiddleware(
+    //     { headers: modifiedHeaders, res: c.res },
+    //     next,
+    //     rateLimiter
+    //   )
+    // })
     .get('/message/:name', (c) => {
       const name = c.req.param('name')
       return c.json({ message: `hello ${name}` })
@@ -67,6 +73,10 @@ export const createServer = (): Hono => {
       return c.json(result)
     })
     .get('/rate-limit', async (c) => {
+      const isAllowed = await fixedWindowRateLimiter.isAllowed('test')
+      if (!isAllowed) {
+        return c.json({ message: 'Rate limit exceeded' }, 429)
+      }
       return c.json({ message: 'This page is rate limited' })
     })
   return app
