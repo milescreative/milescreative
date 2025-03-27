@@ -2,10 +2,10 @@ import { Redis } from 'ioredis'
 
 export * from './utils/user-rate-limiter'
 
-export * from './utils/leaky-bucket'
-
 export * from './utils/middleware'
 
+export * from './fixed-window'
+export * from './token-bucket'
 // Redis client creation utility
 export interface RedisConfig {
   host?: string

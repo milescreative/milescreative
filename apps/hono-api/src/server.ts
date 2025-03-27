@@ -5,6 +5,7 @@ import {
   createUserRateLimiter,
   FixedWindowRateLimiter,
   rateLimiterMiddleware,
+  TokenBucketRateLimiter,
 } from '@milescreative/rate-limiter'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -33,6 +34,11 @@ export const createServer = (): Hono => {
   const fixedWindowRateLimiter = new FixedWindowRateLimiter({
     limit: 10,
     windowSize: '10',
+    prefix: 'myapp',
+  })
+  const tokenBucketRateLimiter = new TokenBucketRateLimiter({
+    bucketCapacity: 5,
+    refillRate: 1,
     prefix: 'myapp',
   })
 
@@ -74,6 +80,13 @@ export const createServer = (): Hono => {
     })
     .get('/rate-limit', async (c) => {
       const isAllowed = await fixedWindowRateLimiter.isAllowed('test')
+      if (!isAllowed) {
+        return c.json({ message: 'Rate limit exceeded' }, 429)
+      }
+      return c.json({ message: 'This page is rate limited' })
+    })
+    .get('/rate-limit-token-bucket', async (c) => {
+      const isAllowed = await tokenBucketRateLimiter.isAllowed('test')
       if (!isAllowed) {
         return c.json({ message: 'Rate limit exceeded' }, 429)
       }
