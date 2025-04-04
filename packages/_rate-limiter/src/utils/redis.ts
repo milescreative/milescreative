@@ -8,7 +8,6 @@ export const redis = new Redis(
     password: process.env.REDIS_PASSWORD || '',
   }
 )
-console.log(redis.status)
 
 // Add connection event handlers
 redis.on('connect', () => {

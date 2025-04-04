@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { redis } from './redis'
+import { redis } from './utils/redis'
 import { rtxn_exec } from './utils/redis-helpers'
 
 export class TokenBucketRateLimiter {
@@ -24,8 +24,8 @@ export class TokenBucketRateLimiter {
 
   async isAllowed(key: string): Promise<boolean> {
     const prefix = this.prefix ? `${this.prefix}:` : ''
-    const keyCount = `${prefix}${key}:count`
-    const keyLastRefill = `${prefix}${key}:lastRefill`
+    const keyCount = `${prefix}${key}:tb_count`
+    const keyLastRefill = `${prefix}${key}:tb_lastRefill`
 
     const currentTime = Date.now()
 
@@ -33,11 +33,11 @@ export class TokenBucketRateLimiter {
     const transaction = redis.multi()
     transaction.get(keyLastRefill)
     transaction.get(keyCount)
-    const [lastRefillTime, lasttokenCount] = await rtxn_exec(transaction, [
+    const [lastRefillTime, lastTokenCount] = await rtxn_exec(transaction, [
       z.coerce.number().default(currentTime),
       z.coerce.number().default(this.bucketCapacity),
     ])
-    let tokenCount = lasttokenCount
+    let tokenCount = lastTokenCount
 
     const elapsedTimeMs = currentTime - lastRefillTime
     const elaspedTimeSecs = elapsedTimeMs / 1000

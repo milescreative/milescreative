@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { redis } from './redis'
+import { redis } from './utils/redis'
 
 export class FixedWindowRateLimiter {
   private limit: number
