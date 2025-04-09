@@ -66,6 +66,40 @@ func CreateSession(userUID string, ctx *fiber.Ctx) (*models.Session, string, err
 	return &session, sessionToken, nil
 }
 
+func GetSessions(userUID string) ([]models.Session, error) {
+	var sessions []models.Session
+	err := database.DB.Where("user_uid = ?", userUID).Find(&sessions).Error
+	if err != nil {
+		return nil, err
+	}
+	return sessions, nil
+}
+
+func DeleteSession(ctx *fiber.Ctx) error {
+	sessionToken := ctx.Cookies("session")
+	if sessionToken == "" {
+		return fiber.NewError(fiber.StatusUnauthorized, "No active session")
+	}
+
+	var session models.Session
+	tokenHash := models.HashToken(sessionToken)
+	err := database.DB.Where("token_hash = ?", tokenHash).Delete(&session).Error
+	if err != nil {
+		return err
+	}
+
+	ctx.Cookie(ClearSessionCookie())
+	return nil
+}
+
+func DeleteUserSessions(ctx *fiber.Ctx, userUID string) error {
+	err := database.DB.Where("user_uid = ?", userUID).Delete(&models.Session{}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func FormatUserResponse(user models.User) fiber.Map {
 	return fiber.Map{
 		"uid":      user.UID,

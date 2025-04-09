@@ -123,7 +123,59 @@ func (h *AuthHandlers) HandleLogout(ctx *fiber.Ctx) error {
 	})
 }
 func (h *AuthHandlers) HandleCSRFToken(ctx *fiber.Ctx) error {
+	token := ctx.Locals("csrf")
+	fmt.Printf("Generated CSRF token: %s\n", token)
+
+	if token == "" {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate CSRF token",
+		})
+	}
+
 	return ctx.JSON(fiber.Map{
-		"csrf_token": ctx.Locals("csrf"),
+		"csrf_token": token,
+	})
+}
+
+func (h *AuthHandlers) HandleListSessions(ctx *fiber.Ctx) error {
+	sessionData, err := ValidateSession(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	userUID := sessionData.User.UID
+	sessions, err := GetSessions(userUID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get sessions",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"sessions": sessions,
+	})
+
+}
+
+func (h *AuthHandlers) HandleDeleteSessions(ctx *fiber.Ctx) error {
+	sessionData, err := ValidateSession(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	userUID := sessionData.User.UID
+	err = DeleteUserSessions(ctx, userUID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete sessions",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"message": "Sessions deleted successfully",
 	})
 }

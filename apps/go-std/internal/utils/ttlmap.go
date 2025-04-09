@@ -1,0 +1,85 @@
+package utils
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+type Cache interface {
+	Put(key string, value interface{})
+	Get(key string) (interface{}, bool)
+	Delete(key string)
+}
+
+// item is a struct that holds the value and the last access time
+type item struct {
+	value      interface{}
+	lastAccess int64
+}
+
+// You can have a single map for an application or few maps for different purposes
+type TTLMap struct {
+	m map[string]*item
+	// For safe access to the map
+	mu sync.Mutex
+}
+
+func NewTTLMap(size int, maxTTL time.Duration) (m *TTLMap) {
+	// map is created with the given length
+	m = &TTLMap{m: make(map[string]*item, size)}
+
+	// this goroutine will clean up the map from old itemsa
+	go func() {
+		// You can adjust this ticker to be more or less frequent
+		for now := range time.Tick(time.Second) {
+			m.mu.Lock()
+			for k, v := range m.m {
+				if now.Unix()-v.lastAccess > int64(maxTTL.Seconds()) {
+					delete(m.m, k)
+				}
+			}
+			m.mu.Unlock()
+		}
+	}()
+
+	return
+}
+
+// Put adds a new item to the map or updates the existing one
+func (m *TTLMap) Put(k string, v interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	fmt.Printf("Put key: %s\n", k) // Log the key being put
+
+	it, ok := m.m[k]
+	if !ok {
+		it = &item{}
+		m.m[k] = it
+	}
+	it.value = v
+	it.lastAccess = time.Now().Unix()
+}
+
+// Get returns the value of the given key if it exists
+func (m *TTLMap) Get(k string) (interface{}, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	fmt.Printf("Get key: %s\n", k) // Log the key being accessed
+
+	if it, ok := m.m[k]; ok {
+		it.lastAccess = time.Now().Unix()
+		return it.value, true
+	}
+
+	return nil, false
+}
+
+// Delete removes the item from the map
+func (m *TTLMap) Delete(k string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.m, k)
+}
