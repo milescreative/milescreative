@@ -17,9 +17,9 @@ type TokenBucketRateLimiter struct {
 	refillRate     float64
 }
 
-func NewTokenBucketRateLimiter(prefix string, bucketCapacity int, refillRate float64) *TokenBucketRateLimiter {
-	storage := NewTTLMap(10000, time.Minute*15)
-	cachePrefix := "tb_rate_limit:" + prefix + ":"
+func NewTokenBucketRateLimiter(identifier string, bucketCapacity int, refillRate float64) *TokenBucketRateLimiter {
+	storage := NewTTLMap(10000, time.Minute*15, "token_bucket_rate_limiter:"+identifier)
+	cachePrefix := "tb_rate_limit:" + identifier + ":"
 
 	return &TokenBucketRateLimiter{
 		cache:          storage,
@@ -62,59 +62,47 @@ func (tb *TokenBucketRateLimiter) IsAllowed(key string) bool {
 	return isAllowed
 }
 
-type LeakyBucketCache struct {
-	count    int
-	lastLeak int64
+type FixedWindowCache struct {
+	count int
 }
 
-type LeakyBucketRateLimiter struct {
-	cache          Cache
-	cachePrefix    string
-	bucketCapacity int
-	leakRate       float64
+type FixedWindowRateLimiter struct {
+	cache       Cache
+	cachePrefix string
+	limit       int
+	windowSize  time.Duration
 }
 
-func NewLeakyBucketRateLimiter(prefix string, bucketCapacity int, leakRate float64) *LeakyBucketRateLimiter {
-	storage := NewTTLMap(10000, time.Minute*15)
-	cachePrefix := "lb_rate_limit:" + prefix + ":"
+func NewFixedWindowRateLimiter(identifier string, limit int, windowSize time.Duration) *FixedWindowRateLimiter {
+	storage := NewTTLMap(10000, windowSize, "fixed_window_rate_limiter:"+identifier)
+	cachePrefix := "fw_rate_limit:" + identifier + ":"
 
-	return &LeakyBucketRateLimiter{
-		cache:          storage,
-		cachePrefix:    cachePrefix,
-		bucketCapacity: bucketCapacity,
-		leakRate:       leakRate,
+	return &FixedWindowRateLimiter{
+		cache:       storage,
+		cachePrefix: cachePrefix,
+		limit:       limit,
+		windowSize:  windowSize,
 	}
-
 }
-
-func (lb *LeakyBucketRateLimiter) IsAllowed(key string) bool {
-	cacheKey := lb.cachePrefix + key
-	var currentTime int64 = time.Now().UnixMilli()
-
-	results, ok := lb.cache.Get(cacheKey)
+func (fw *FixedWindowRateLimiter) IsAllowed(key string) bool {
+	cacheKey := fw.cachePrefix + key
+	results, ok := fw.cache.Get(cacheKey)
 	if !ok {
-		results = &LeakyBucketCache{
-			count:    0,
-			lastLeak: currentTime,
+		results = &FixedWindowCache{
+			count: 0,
 		}
 	}
-	bucket := results.(*LeakyBucketCache)
-	requestCount, lastLeakTime := bucket.count, bucket.lastLeak
+	bucket := results.(*FixedWindowCache)
+	count := bucket.count
 
-	elapsedTimeMs := currentTime - lastLeakTime
-	elapsedTimeSeconds := float64(elapsedTimeMs) / 1000.0
-	requestsToLeak := int(lb.leakRate * elapsedTimeSeconds)
-	requestCount = int(math.Max(0.0, float64(requestCount-requestsToLeak)))
-
-	isAllowed := requestCount < lb.bucketCapacity
+	isAllowed := count < fw.limit
 	if isAllowed {
-		requestCount++
+		count++
+		fw.cache.Put(cacheKey, &FixedWindowCache{
+			count: count,
+		})
 	}
 
-	lb.cache.Put(cacheKey, &LeakyBucketCache{
-		count:    requestCount,
-		lastLeak: currentTime,
-	})
-
 	return isAllowed
+
 }
