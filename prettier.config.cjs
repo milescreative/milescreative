@@ -38,4 +38,10 @@ module.exports = {
     'prettier-plugin-tailwindcss',
     'prettier-plugin-packagejson',
   ],
+  overrides: {
+    files: ['*.json', '*.jsonc'],
+    options: {
+      trailingComma: 'none',
+    },
+  },
 }
