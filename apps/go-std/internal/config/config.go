@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
 )
 
 // Config provides a unified interface for both JSONC and environment variables
-type Config struct {
+type ConfigMap struct {
 	// Cache commonly used values
 	cachedValues struct {
 		port   int
@@ -23,6 +24,11 @@ type Config struct {
 	// Raw data
 	data map[string]interface{}
 }
+
+var (
+	instance *ConfigMap
+	once     sync.Once
+)
 
 func findEnvFile() (string, error) {
 	// Possible locations for .env file
@@ -49,32 +55,44 @@ func findEnvFile() (string, error) {
 }
 
 // NewConfig initializes configuration from JSONC file
-func NewConfig(jsonPath string) (*Config, error) {
-	c := &Config{}
+func Config() (*ConfigMap, error) {
+	var initErr error
 
-	envPath, err := findEnvFile()
-	if err != nil {
-		return nil, fmt.Errorf("error finding .env file: %w", err)
+	once.Do(func() {
+		fmt.Println("Initializing config")
+		instance = &ConfigMap{
+			data: make(map[string]interface{}),
+		}
+
+		envPath, err := findEnvFile()
+		if err != nil {
+			initErr = fmt.Errorf("error finding .env file: %w", err)
+			return
+		}
+
+		fmt.Printf("Loading .env from: %s\n", envPath)
+		if err := godotenv.Load(envPath); err != nil {
+			initErr = fmt.Errorf("error loading .env file: %w", err)
+			return
+		}
+
+		// Cache frequently used values from env
+		if port := os.Getenv("port"); port != "" {
+			if p, err := strconv.Atoi(port); err == nil {
+				instance.cachedValues.port = p
+			}
+		}
+	})
+
+	if initErr != nil {
+		return nil, initErr
 	}
 
-	fmt.Printf("Loading .env from: %s\n", envPath)
-	if err := godotenv.Load(envPath); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	// Load JSON config for constants
-	if err := c.loadJSON(jsonPath); err != nil {
-		return nil, err
-	}
-
-	// Cache frequently used values
-	port, _ := c.GetInt("port")
-	c.cachedValues.port = port
-
-	return c, nil
+	return instance, nil
 }
 
-func (c *Config) loadJSON(path string) error {
+// LoadJSON loads and merges JSON configuration on top of environment variables
+func (c *ConfigMap) LoadJSON(path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read JSON config file: %w", err)
@@ -82,15 +100,31 @@ func (c *Config) loadJSON(path string) error {
 
 	cleanJSON := removeJSONCComments(string(data))
 
-	if err := json.Unmarshal([]byte(cleanJSON), &c.data); err != nil {
+	// Create a temporary map for the new JSON data
+	jsonData := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(cleanJSON), &jsonData); err != nil {
 		return fmt.Errorf("failed to parse JSON config: %w", err)
+	}
+
+	// Merge JSON data into existing config
+	// JSON values will override existing values if they exist
+	for k, v := range jsonData {
+		c.data[k] = v
+	}
+
+	// Update cached values if they were overridden
+	if port, err := c.GetInt("port"); err == nil {
+		c.cachedValues.port = port
+	}
+	if port_, err := c.GetInt("app_port"); err == nil {
+		c.cachedValues.port = port_
 	}
 
 	return nil
 }
 
 // GetString returns string value from either env or JSONC
-func (c *Config) GetString(key string) string {
+func (c *ConfigMap) GetString(key string) string {
 	// First check environment
 	if val := os.Getenv(key); val != "" {
 		return val
@@ -110,7 +144,7 @@ func (c *Config) GetString(key string) string {
 }
 
 // GetInt returns int value from either env or JSONC
-func (c *Config) GetInt(key string) (int, error) {
+func (c *ConfigMap) GetInt(key string) (int, error) {
 	// First check environment
 	if val := os.Getenv(key); val != "" {
 		return strconv.Atoi(val)
@@ -132,7 +166,7 @@ func (c *Config) GetInt(key string) (int, error) {
 }
 
 // GetBool returns boolean value from either env or JSONC
-func (c *Config) GetBool(key string) (bool, error) {
+func (c *ConfigMap) GetBool(key string) (bool, error) {
 	// First check environment
 	if val := os.Getenv(key); val != "" {
 		return strconv.ParseBool(val)
@@ -173,6 +207,6 @@ func removeJSONCComments(input string) string {
 }
 
 // Use cached values
-func (c *Config) Port() int {
+func (c *ConfigMap) Port() int {
 	return c.cachedValues.port // Direct access, no lookup
 }

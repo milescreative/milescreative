@@ -1,12 +1,9 @@
-package main
+package middleware
 
 import (
 	"fmt"
-	"go-std/internal/config"
 	"log"
 	"net/http"
-	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -91,47 +88,4 @@ func CSPMiddleware(isDevelopment bool) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func simpleHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = fmt.Fprintf(w, `
-   <!DOCTYPE html>
-   <html>
-   <head><title>Conditional CSP Test</title></head>
-   <body>
-    <h1>CSP Applied</h1>
-    <p>Check console. Policy depends on environment.</p>
-   </body>
-   </html>`)
-}
-
-func main() {
-	env, _ := config.Config()
-	isDev := strings.ToLower(env.GetString("APP_ENV")) == "development"
-
-	cspMiddlewareInstance := CSPMiddleware(isDev)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", simpleHandler)
-	secureMux := cspMiddlewareInstance(mux)
-
-	try_env := loadConfig()
-	fmt.Println("app_name: ", try_env.GetString("app_name"))
-
-	port := strconv.Itoa(try_env.Port())
-	if port == "" {
-		port = "8081"
-	}
-
-	log.Printf("Starting server on port %s (Dev Mode: %t)...", port, isDev)
-	err := http.ListenAndServe(":"+port, secureMux)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-}
-
-func loadConfig() *config.ConfigMap {
-	env, _ := config.Config()
-	env.LoadJSON(filepath.Join("config", "test.jsonc"))
-	return env
 }

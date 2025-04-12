@@ -7,7 +7,8 @@ import (
 )
 
 func BenchmarkConfigLookup(b *testing.B) {
-	cfg, _ := config.NewConfig("../../test.jsonc")
+	cfg, _ := config.Config()
+	cfg.LoadJSON("../../test.jsonc")
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -16,7 +17,8 @@ func BenchmarkConfigLookup(b *testing.B) {
 }
 
 func BenchmarkConfigLookupCached(b *testing.B) {
-	cfg, _ := config.NewConfig("../../test.jsonc")
+	cfg, _ := config.Config()
+	cfg.LoadJSON("../../test.jsonc")
 	value := cfg.GetString("app_name")
 	b.ResetTimer()
 
