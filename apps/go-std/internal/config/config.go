@@ -77,7 +77,12 @@ func Config() (*ConfigMap, error) {
 		}
 
 		// Cache frequently used values from env
-		if port := os.Getenv("port"); port != "" {
+		if port := os.Getenv("PORT"); port != "" {
+			if p, err := strconv.Atoi(port); err == nil {
+				instance.cachedValues.port = p
+			}
+		}
+		if port := os.Getenv("APP_PORT"); port != "" {
 			if p, err := strconv.Atoi(port); err == nil {
 				instance.cachedValues.port = p
 			}
@@ -113,10 +118,10 @@ func (c *ConfigMap) LoadJSON(path string) error {
 	}
 
 	// Update cached values if they were overridden
-	if port, err := c.GetInt("port"); err == nil {
+	if port, err := c.GetInt("port"); port != 0 || err == nil {
 		c.cachedValues.port = port
 	}
-	if port_, err := c.GetInt("app_port"); err == nil {
+	if port_, err := c.GetInt("APP_PORT"); port_ != 0 || err == nil {
 		c.cachedValues.port = port_
 	}
 

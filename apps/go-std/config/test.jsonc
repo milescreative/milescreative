@@ -3,7 +3,7 @@
   "app_name": "go-std",
   "app_version": "0.0.1",
   "app_env": "development",
-  "app_port": 8080,
+  "app_port": 3000,
   "app_host": "0.0.0.0"
 }
 
