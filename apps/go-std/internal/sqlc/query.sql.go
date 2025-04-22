@@ -37,6 +37,79 @@ type CreateAuthorsParams struct {
 	Bio  pgtype.Text `db:"bio" json:"bio"`
 }
 
+const createNewUser = `-- name: CreateNewUser :one
+WITH new_user AS (
+  INSERT INTO "public"."user"
+  ("name", "email", "email_verified", "image")
+       VALUES ($1, $2, $3, $4)
+       RETURNING id AS user_id
+), new_account AS (
+  INSERT INTO "public"."account"
+  ("account_id", "provider_id", "access_token", "refresh_token", "id_token", "scope","user_id")
+       SELECT $5, $6, $7, $8, $9, $10, user_id
+         FROM new_user
+       RETURNING id AS account_id, user_id
+), new_session AS (
+  INSERT INTO "public"."session"
+  ("expires_at", "token", "ip_address", "user_agent", "user_id")
+       SELECT $11,
+              $12,
+              $13,
+              $14,
+              a.user_id
+         FROM new_account a
+       RETURNING id AS session_id, user_id
+ )
+SELECT
+session_id, user_id
+FROM
+new_session
+`
+
+type CreateNewUserParams struct {
+	Name          string           `db:"name" json:"name"`
+	Email         string           `db:"email" json:"email"`
+	EmailVerified bool             `db:"email_verified" json:"email_verified"`
+	Image         pgtype.Text      `db:"image" json:"image"`
+	AccountID     string           `db:"account_id" json:"account_id"`
+	ProviderID    string           `db:"provider_id" json:"provider_id"`
+	AccessToken   pgtype.Text      `db:"access_token" json:"access_token"`
+	RefreshToken  pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+	IDToken       pgtype.Text      `db:"id_token" json:"id_token"`
+	Scope         pgtype.Text      `db:"scope" json:"scope"`
+	ExpiresAt     pgtype.Timestamp `db:"expires_at" json:"expires_at"`
+	Token         string           `db:"token" json:"token"`
+	IpAddress     pgtype.Text      `db:"ip_address" json:"ip_address"`
+	UserAgent     pgtype.Text      `db:"user_agent" json:"user_agent"`
+}
+
+type CreateNewUserRow struct {
+	SessionID string `db:"session_id" json:"session_id"`
+	UserID    string `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (CreateNewUserRow, error) {
+	row := q.db.QueryRow(ctx, createNewUser,
+		arg.Name,
+		arg.Email,
+		arg.EmailVerified,
+		arg.Image,
+		arg.AccountID,
+		arg.ProviderID,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.IDToken,
+		arg.Scope,
+		arg.ExpiresAt,
+		arg.Token,
+		arg.IpAddress,
+		arg.UserAgent,
+	)
+	var i CreateNewUserRow
+	err := row.Scan(&i.SessionID, &i.UserID)
+	return i, err
+}
+
 const deleteAuthor = `-- name: DeleteAuthor :exec
 DELETE FROM authors
 WHERE id = $1

@@ -33,13 +33,13 @@ CREATE TABLE "session" (
 
 -- CreateTable
 CREATE TABLE "user" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL DEFAULT nextval('id_seq'::regclass),
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "email_verified" BOOLEAN NOT NULL,
     "image" TEXT,
-    "created_at" TIMESTAMP(6) NOT NULL,
-    "updated_at" TIMESTAMP(6) NOT NULL,
+    "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
@@ -57,12 +57,12 @@ CREATE TABLE "verification" (
 );
 
 -- CreateTable
-CREATE TABLE "Author" (
+CREATE TABLE "authors" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "bio" TEXT,
 
-    CONSTRAINT "Author_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "authors_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -76,4 +76,3 @@ ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-

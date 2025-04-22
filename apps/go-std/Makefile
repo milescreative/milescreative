@@ -5,9 +5,13 @@ PRISMA_SCHEMA=db/prisma/schema.prisma
 SQL_SCHEMA=db/schemas/schema.sql
 
 # Migrate the database using Prisma
-migrate-db:
-	@echo "Running Prisma migrations..."
-	prisma migrate dev --schema=$(PRISMA_SCHEMA)
+push-db:
+	@echo "Running Prisma push..."
+	prisma db push --schema=$(PRISMA_SCHEMA)
+
+pull-db:
+	@echo "Running Prisma pull..."
+	prisma db pull --schema=$(PRISMA_SCHEMA)
 
 # Generate schema diff from empty state
 dump-schema:
@@ -18,4 +22,4 @@ dump-schema:
 		--script > $(SQL_SCHEMA)
 
 # Run both migration and schema dump
-db-update: migrate-db dump-schema
+db-update: push-db dump-schema

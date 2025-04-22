@@ -56,6 +56,8 @@ services:
     environment:
       - PORT=3003
       - NODE_ENV=production
+    volumes:
+      - /data/coolify/ssl/coolify-ca.crt:/etc/ssl/certs/coolify-ca.crt:ro
   tanstack:
     image: tanstack-docker-test-2
     build:

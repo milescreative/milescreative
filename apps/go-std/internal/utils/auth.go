@@ -34,6 +34,15 @@ func VerifyCSRFToken(token string, sessionId string, storedHMAC []byte) bool {
 	return hmac.Equal(storedHMAC, expectedHMAC)
 }
 
+func GenerateSessionToken() (string, error) {
+	//TODO : generate hash for storage and function to verify similar to csrf
+	state, err := GenerateRandomStringNoPadding()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return state, nil
+}
+
 func GenerateState() (string, error) {
 	state, err := GenerateRandomStringNoPadding()
 	if err != nil {
