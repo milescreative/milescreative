@@ -6,9 +6,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
+
+	"go-std/internal/sqlc"
+
+	"context"
+	"net/http"
 )
 
 var secret = []byte("NK9LELM2XGM89R5XYJ6S====")
@@ -78,6 +84,7 @@ func NewOAuth2Tokens(body []byte) (*OAuth2Tokens, error) {
 	if err := json.Unmarshal(body, &t.Data); err != nil {
 		return nil, err
 	}
+	fmt.Println("*******tokens: ", t.Data)
 	return &t, nil
 }
 
@@ -145,4 +152,72 @@ func (t *OAuth2Tokens) IDToken() (string, error) {
 		return "", errors.New("missing/invalid 'id_token'")
 	}
 	return v, nil
+}
+
+type TokenResult struct {
+	AccessToken          string
+	RefreshToken         string
+	IDToken              string
+	Scopes               []string
+	AccessTokenExpiresAt time.Time
+}
+
+func (t *OAuth2Tokens) GetTokenResult() (TokenResult, error) {
+	result := TokenResult{}
+
+	// Access Token
+	accessToken, err := t.AccessToken()
+	if err != nil {
+		return result, fmt.Errorf("access_token: %w", err)
+	}
+	result.AccessToken = accessToken
+
+	// Refresh Token
+	refreshToken, err := t.RefreshToken()
+	if err != nil {
+		return result, fmt.Errorf("refresh_token: %w", err)
+	}
+	result.RefreshToken = refreshToken
+
+	// ID Token
+	idToken, err := t.IDToken()
+	if err != nil {
+		return result, fmt.Errorf("id_token: %w", err)
+	}
+	result.IDToken = idToken
+
+	// Scopes
+	scopes, err := t.Scopes()
+	if err != nil {
+		return result, fmt.Errorf("scope: %w", err)
+	}
+	result.Scopes = scopes
+
+	// Expires At
+	expiresAt, err := t.AccessTokenExpiresAt()
+	if err != nil {
+		return result, fmt.Errorf("expires_in: %w", err)
+	}
+	result.AccessTokenExpiresAt = expiresAt
+
+	return result, nil
+}
+
+var logger = NewLogger(DEBUG, true)
+
+func ValidateSession(q *sqlc.Queries, w http.ResponseWriter, r *http.Request) (bool, error) {
+	cookie, _ := r.Cookie("session_token")
+
+	if cookie != nil {
+		session, err := q.GetSessionByToken(context.Background(), cookie.Value)
+		if err != nil {
+			logger.Error("error getting session by token: %v", err)
+			return false, err
+		}
+		if session.ID != "" {
+			logger.Info("session valid: true. user_id: %s", session.UserID)
+			return true, nil
+		}
+	}
+	return false, nil
 }

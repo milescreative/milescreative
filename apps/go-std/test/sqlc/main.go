@@ -22,7 +22,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("tls config: ", tlsConfig)
+
 	defer conn.Close(context.Background())
 
 	q := sqlc.New(conn)

@@ -9,19 +9,18 @@ import (
 )
 
 type Account struct {
-	ID                    string           `db:"id" json:"id"`
-	AccountID             string           `db:"account_id" json:"account_id"`
-	ProviderID            string           `db:"provider_id" json:"provider_id"`
-	UserID                string           `db:"user_id" json:"user_id"`
-	AccessToken           pgtype.Text      `db:"access_token" json:"access_token"`
-	RefreshToken          pgtype.Text      `db:"refresh_token" json:"refresh_token"`
-	IDToken               pgtype.Text      `db:"id_token" json:"id_token"`
-	AccessTokenExpiresAt  pgtype.Timestamp `db:"access_token_expires_at" json:"access_token_expires_at"`
-	RefreshTokenExpiresAt pgtype.Timestamp `db:"refresh_token_expires_at" json:"refresh_token_expires_at"`
-	Scope                 pgtype.Text      `db:"scope" json:"scope"`
-	Password              pgtype.Text      `db:"password" json:"password"`
-	CreatedAt             pgtype.Timestamp `db:"created_at" json:"created_at"`
-	UpdatedAt             pgtype.Timestamp `db:"updated_at" json:"updated_at"`
+	ID                   string           `db:"id" json:"id"`
+	AccountID            string           `db:"account_id" json:"account_id"`
+	ProviderID           string           `db:"provider_id" json:"provider_id"`
+	UserID               string           `db:"user_id" json:"user_id"`
+	AccessToken          pgtype.Text      `db:"access_token" json:"access_token"`
+	RefreshToken         pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+	IDToken              pgtype.Text      `db:"id_token" json:"id_token"`
+	AccessTokenExpiresAt pgtype.Timestamp `db:"access_token_expires_at" json:"access_token_expires_at"`
+	Scope                pgtype.Text      `db:"scope" json:"scope"`
+	Password             pgtype.Text      `db:"password" json:"password"`
+	CreatedAt            pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 }
 
 type Author struct {
@@ -39,6 +38,7 @@ type Session struct {
 	IpAddress pgtype.Text      `db:"ip_address" json:"ip_address"`
 	UserAgent pgtype.Text      `db:"user_agent" json:"user_agent"`
 	UserID    string           `db:"user_id" json:"user_id"`
+	AccountID pgtype.Text      `db:"account_id" json:"account_id"`
 }
 
 type User struct {

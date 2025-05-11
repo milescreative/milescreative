@@ -21,5 +21,9 @@ dump-schema:
 		--to-schema-datamodel=$(PRISMA_SCHEMA) \
 		--script > $(SQL_SCHEMA)
 
+start-cloudflared:
+	cloudflared access tcp --hostname pg.mlcr.us --url localhost:5433
+
+
 # Run both migration and schema dump
 db-update: push-db dump-schema

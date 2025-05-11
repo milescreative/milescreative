@@ -8,7 +8,15 @@ try {
   const { SQL } = require('bun')
 
   console.log('Initializing database connection with Bun SQL...')
-  sql = new SQL(process.env.PG_URL)
+  sql = new SQL({
+    // url: process.env.PG_URL,
+    hostname: 'milescreative-s1',
+    port: 5433,
+    database: 'postgres',
+    username: 'postgres',
+    password: process.env.PG_PASSWORD,
+  })
+
 
   sql.options.onconnect = () => {
     console.log('Connected to database')

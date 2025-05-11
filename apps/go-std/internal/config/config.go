@@ -9,6 +9,9 @@ import (
 	"strings"
 	"sync"
 
+	"go-std/internal/sqlc"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -23,6 +26,13 @@ type ConfigMap struct {
 	}
 	// Raw data
 	data map[string]interface{}
+}
+
+type App struct {
+	DB      *pgxpool.Pool
+	IsDev   bool
+	Queries *sqlc.Queries
+	Env     *ConfigMap
 }
 
 var (

@@ -28,6 +28,7 @@ export const createServer = (): Hono => {
     leakRate: 1,
     prefix: 'myapp',
   })
+  console.log('yay')
 
   app
     .use('*', logger())

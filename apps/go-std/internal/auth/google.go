@@ -40,6 +40,8 @@ func (o *GoogleOAuth) CreateAuthorizationURLWithPKCE(state string, codeVerifier 
 		"code_challenge":        {utils.CreateS256CodeChallenge(codeVerifier)},
 		"code_challenge_method": {"S256"},
 		"scope":                 {o.Scopes()},
+		"access_type":           {"offline"},
+		"prompt":                {"consent"},
 	}
 	if o.redirectURI != "" {
 		queryParams.Set("redirect_uri", o.redirectURI)
@@ -71,6 +73,8 @@ func (o *GoogleOAuth) ValidateAuthorizationCode(code string, codeVerifier string
 		return nil, fmt.Errorf("failed to validate authorization code: %w", err)
 	}
 
+	fmt.Println("token endpoint response:", string(resp_body))
+
 	tokens, err := utils.NewOAuth2Tokens(resp_body)
 	if err != nil {
 		return nil, fmt.Errorf("validation response invalid: %w", err)
@@ -88,6 +92,7 @@ func (o *GoogleOAuth) RefreshAccessToken(refreshToken string) (*utils.OAuth2Toke
 		queryParams.Set("scope", o.Scopes())
 	}
 	resp_body, err := o.AuthFetch(tokenEndpoint, queryParams)
+	fmt.Println("refresh token response:", string(resp_body))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to refresh access token: %w", err)

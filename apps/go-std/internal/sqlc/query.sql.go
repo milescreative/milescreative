@@ -42,50 +42,62 @@ WITH new_user AS (
   INSERT INTO "public"."user"
   ("name", "email", "email_verified", "image")
        VALUES ($1, $2, $3, $4)
-       RETURNING id AS user_id
+  ON CONFLICT(email) DO UPDATE SET name = $1
+  RETURNING id AS user_id
 ), new_account AS (
   INSERT INTO "public"."account"
-  ("account_id", "provider_id", "access_token", "refresh_token", "id_token", "scope","user_id")
-       SELECT $5, $6, $7, $8, $9, $10, user_id
+  ("account_id", "provider_id", "access_token", "refresh_token", "id_token", "scope","user_id", "access_token_expires_at")
+       SELECT $5, $6, $7, $8, $9, $10, user_id, $15
          FROM new_user
-       RETURNING id AS account_id, user_id
+  ON CONFLICT(account_id) DO UPDATE SET
+  provider_id = $6,
+  access_token = $7,
+  refresh_token = $8,
+  id_token = $9,
+  scope = $10,
+  access_token_expires_at = $15
+
+  RETURNING id AS account_id, user_id
 ), new_session AS (
   INSERT INTO "public"."session"
-  ("expires_at", "token", "ip_address", "user_agent", "user_id")
+  ("expires_at", "token", "ip_address", "user_agent", "user_id", "account_id")
        SELECT $11,
               $12,
               $13,
               $14,
-              a.user_id
+              a.user_id,
+              a.account_id
          FROM new_account a
-       RETURNING id AS session_id, user_id
+       RETURNING id AS session_id, user_id, token as session_token
  )
 SELECT
-session_id, user_id
+session_id, user_id, session_token
 FROM
 new_session
 `
 
 type CreateNewUserParams struct {
-	Name          string           `db:"name" json:"name"`
-	Email         string           `db:"email" json:"email"`
-	EmailVerified bool             `db:"email_verified" json:"email_verified"`
-	Image         pgtype.Text      `db:"image" json:"image"`
-	AccountID     string           `db:"account_id" json:"account_id"`
-	ProviderID    string           `db:"provider_id" json:"provider_id"`
-	AccessToken   pgtype.Text      `db:"access_token" json:"access_token"`
-	RefreshToken  pgtype.Text      `db:"refresh_token" json:"refresh_token"`
-	IDToken       pgtype.Text      `db:"id_token" json:"id_token"`
-	Scope         pgtype.Text      `db:"scope" json:"scope"`
-	ExpiresAt     pgtype.Timestamp `db:"expires_at" json:"expires_at"`
-	Token         string           `db:"token" json:"token"`
-	IpAddress     pgtype.Text      `db:"ip_address" json:"ip_address"`
-	UserAgent     pgtype.Text      `db:"user_agent" json:"user_agent"`
+	Name                 string           `db:"name" json:"name"`
+	Email                string           `db:"email" json:"email"`
+	EmailVerified        bool             `db:"email_verified" json:"email_verified"`
+	Image                pgtype.Text      `db:"image" json:"image"`
+	AccountID            string           `db:"account_id" json:"account_id"`
+	ProviderID           string           `db:"provider_id" json:"provider_id"`
+	AccessToken          pgtype.Text      `db:"access_token" json:"access_token"`
+	RefreshToken         pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+	IDToken              pgtype.Text      `db:"id_token" json:"id_token"`
+	Scope                pgtype.Text      `db:"scope" json:"scope"`
+	ExpiresAt            pgtype.Timestamp `db:"expires_at" json:"expires_at"`
+	Token                string           `db:"token" json:"token"`
+	IpAddress            pgtype.Text      `db:"ip_address" json:"ip_address"`
+	UserAgent            pgtype.Text      `db:"user_agent" json:"user_agent"`
+	AccessTokenExpiresAt pgtype.Timestamp `db:"access_token_expires_at" json:"access_token_expires_at"`
 }
 
 type CreateNewUserRow struct {
-	SessionID string `db:"session_id" json:"session_id"`
-	UserID    string `db:"user_id" json:"user_id"`
+	SessionID    string `db:"session_id" json:"session_id"`
+	UserID       string `db:"user_id" json:"user_id"`
+	SessionToken string `db:"session_token" json:"session_token"`
 }
 
 func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (CreateNewUserRow, error) {
@@ -104,9 +116,10 @@ func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (C
 		arg.Token,
 		arg.IpAddress,
 		arg.UserAgent,
+		arg.AccessTokenExpiresAt,
 	)
 	var i CreateNewUserRow
-	err := row.Scan(&i.SessionID, &i.UserID)
+	err := row.Scan(&i.SessionID, &i.UserID, &i.SessionToken)
 	return i, err
 }
 
@@ -120,6 +133,36 @@ func (q *Queries) DeleteAuthor(ctx context.Context, id int32) error {
 	return err
 }
 
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM "public"."session"
+WHERE token = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, token string) error {
+	_, err := q.db.Exec(ctx, deleteSession, token)
+	return err
+}
+
+const deleteSessionsForUser = `-- name: DeleteSessionsForUser :exec
+DELETE FROM "public"."session"
+WHERE "user_id" = $1
+`
+
+func (q *Queries) DeleteSessionsForUser(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, deleteSessionsForUser, userID)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM "public"."user"
+WHERE id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
 const getAuthor = `-- name: GetAuthor :one
 SELECT id, name, bio FROM authors
 WHERE id = $1 LIMIT 1
@@ -130,6 +173,101 @@ func (q *Queries) GetAuthor(ctx context.Context, id int32) (Author, error) {
 	var i Author
 	err := row.Scan(&i.ID, &i.Name, &i.Bio)
 	return i, err
+}
+
+const getSessionByToken = `-- name: GetSessionByToken :one
+SELECT session.id, session.expires_at, session.token, session.created_at, session.updated_at, session.ip_address, session.user_agent, session.user_id, session.account_id, account.refresh_token FROM "public"."session" session
+INNER JOIN public.user  ON session.user_id = "user".id
+INNER JOIN public.account account ON session.account_id = account.id
+WHERE session.token = $1
+LIMIT 1
+`
+
+type GetSessionByTokenRow struct {
+	ID           string           `db:"id" json:"id"`
+	ExpiresAt    pgtype.Timestamp `db:"expires_at" json:"expires_at"`
+	Token        string           `db:"token" json:"token"`
+	CreatedAt    pgtype.Timestamp `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `db:"updated_at" json:"updated_at"`
+	IpAddress    pgtype.Text      `db:"ip_address" json:"ip_address"`
+	UserAgent    pgtype.Text      `db:"user_agent" json:"user_agent"`
+	UserID       string           `db:"user_id" json:"user_id"`
+	AccountID    pgtype.Text      `db:"account_id" json:"account_id"`
+	RefreshToken pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+}
+
+func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessionByTokenRow, error) {
+	row := q.db.QueryRow(ctx, getSessionByToken, token)
+	var i GetSessionByTokenRow
+	err := row.Scan(
+		&i.ID,
+		&i.ExpiresAt,
+		&i.Token,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.UserID,
+		&i.AccountID,
+		&i.RefreshToken,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, name, email, email_verified, image, created_at, updated_at FROM "public"."user"
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.EmailVerified,
+		&i.Image,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserSessions = `-- name: GetUserSessions :many
+SELECT id, expires_at, token, created_at, updated_at, ip_address, user_agent, user_id, account_id FROM "public"."session"
+WHERE "user_id" = $1
+`
+
+func (q *Queries) GetUserSessions(ctx context.Context, userID string) ([]Session, error) {
+	rows, err := q.db.Query(ctx, getUserSessions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Session
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExpiresAt,
+			&i.Token,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.UserID,
+			&i.AccountID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listAuthors = `-- name: ListAuthors :many
@@ -157,6 +295,38 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 	return items, nil
 }
 
+const updateAccount = `-- name: UpdateAccount :exec
+UPDATE "public"."account"
+SET "access_token" = COALESCE($1, access_token),
+    "refresh_token" = COALESCE($2, refresh_token),
+    "id_token" = COALESCE($3, id_token),
+    "access_token_expires_at" = COALESCE($4, access_token_expires_at),
+    "scope" = COALESCE($5, scope),
+    "updated_at" = NOW()
+WHERE "id" = $6
+`
+
+type UpdateAccountParams struct {
+	AccessToken          pgtype.Text      `db:"access_token" json:"access_token"`
+	RefreshToken         pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+	IDToken              pgtype.Text      `db:"id_token" json:"id_token"`
+	AccessTokenExpiresAt pgtype.Timestamp `db:"access_token_expires_at" json:"access_token_expires_at"`
+	Scope                pgtype.Text      `db:"scope" json:"scope"`
+	AccountID            string           `db:"account_id" json:"account_id"`
+}
+
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
+	_, err := q.db.Exec(ctx, updateAccount,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.IDToken,
+		arg.AccessTokenExpiresAt,
+		arg.Scope,
+		arg.AccountID,
+	)
+	return err
+}
+
 const updateAuthor = `-- name: UpdateAuthor :exec
 UPDATE authors
   set name = $2,
@@ -172,5 +342,30 @@ type UpdateAuthorParams struct {
 
 func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) error {
 	_, err := q.db.Exec(ctx, updateAuthor, arg.ID, arg.Name, arg.Bio)
+	return err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE "public"."user"
+SET "name" = $2,
+    "email" = $3,
+    "image" = $4
+WHERE id = $1
+`
+
+type UpdateUserParams struct {
+	ID    string      `db:"id" json:"id"`
+	Name  string      `db:"name" json:"name"`
+	Email string      `db:"email" json:"email"`
+	Image pgtype.Text `db:"image" json:"image"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.Exec(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Image,
+	)
 	return err
 }

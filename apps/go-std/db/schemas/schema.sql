@@ -8,7 +8,6 @@ CREATE TABLE "account" (
     "refresh_token" TEXT,
     "id_token" TEXT,
     "access_token_expires_at" TIMESTAMP(6),
-    "refresh_token_expires_at" TIMESTAMP(6),
     "scope" TEXT,
     "password" TEXT,
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -27,6 +26,7 @@ CREATE TABLE "session" (
     "ip_address" TEXT,
     "user_agent" TEXT,
     "user_id" TEXT NOT NULL,
+    "account_id" TEXT,
 
     CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
@@ -66,6 +66,9 @@ CREATE TABLE "authors" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "account_account_id_unique" ON "account"("account_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "session_token_unique" ON "session"("token");
 
 -- CreateIndex
@@ -76,4 +79,7 @@ ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "session" ADD CONSTRAINT "session_account_id_account_id_fk" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
