@@ -1,6 +1,20 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+
+	"go-std/internal/config"
+)
+
+type MiddlewareContext struct {
+	*config.App
+}
+
+func NewMiddlewareContext(app *config.App) *MiddlewareContext {
+	return &MiddlewareContext{
+		App: app,
+	}
+}
 
 type Middleware func(http.Handler) http.Handler
 

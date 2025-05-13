@@ -10,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"go-std/internal/middleware"
 	"go-std/internal/sqlc"
+	"go-std/internal/utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,6 +35,11 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	middlewareStack := middleware.CreateStack(middleware.CORS, middleware.CSPMiddleware(isDev))
+
+	middlewareContext := middleware.NewMiddlewareContext(app)
+	protected := middlewareContext.Protected
 	authHandlers := auth.NewAuthHandlers(app)
 
 	mux.HandleFunc("/", authHandlers.EnvHandler)
@@ -42,6 +49,11 @@ func main() {
 	mux.HandleFunc("/api/auth/logout", authHandlers.LogoutHandler)
 	mux.HandleFunc("/api/auth/refresh", authHandlers.RefreshTokenHandler)
 
+	mux.HandleFunc("/api/auth/protected", protected(someProtectedHandler))
+
+	mux.HandleFunc("/api/auth/csrf", authHandlers.GetCSRFTokenHandler)
+	mux.Handle("/api/auth/csrf-protected", middlewareStack(middleware.CSRFMiddleware(http.HandlerFunc(someCSRFHandler))))
+
 	port, _ := env.GetInt("APP_PORT")
 	if port == 0 {
 		port = 3000
@@ -49,9 +61,17 @@ func main() {
 	portStr := strconv.Itoa(port)
 
 	log.Printf("Starting server on port %s (Dev Mode: %t)...", portStr, isDev)
-	err = http.ListenAndServe(":"+portStr, mux)
+	err = http.ListenAndServe(":"+portStr, middlewareStack(mux))
 	if err != nil {
 		log.Fatal(err)
 	}
 
+}
+
+func someProtectedHandler(w http.ResponseWriter, r *http.Request) {
+	utils.SuccessResponse(w, "You are authorized")
+}
+
+func someCSRFHandler(w http.ResponseWriter, r *http.Request) {
+	utils.SuccessResponse(w, "You are authorized")
 }

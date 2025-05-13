@@ -21,6 +21,17 @@ type AuthHandlers struct {
 	*config.App
 }
 
+const (
+	sessionCookieName            = "session_token"
+	sessionExpiration            = time.Hour * 24 * 30
+	authRedirectQueryParam       = "redirect_url"
+	authRedirectCookieName       = "auth_redirect_url"
+	authRedirectDefault          = "/"
+	googleOAuthStateCookieName   = "google_oauth_state"
+	googleCodeVerifierCookieName = "google_code_verifier"
+	userSessionQueryParam        = "user_session"
+)
+
 func NewAuthHandlers(app *config.App) *AuthHandlers {
 	return &AuthHandlers{
 		App: app,
@@ -30,9 +41,9 @@ func NewAuthHandlers(app *config.App) *AuthHandlers {
 func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	q := a.Queries
-	redirectURL := r.URL.Query().Get("redirect_url")
+	redirectURL := r.URL.Query().Get(authRedirectQueryParam)
 	if redirectURL == "" {
-		redirectURL = "/"
+		redirectURL = authRedirectDefault
 	}
 
 	// check if user is already logged in
@@ -44,7 +55,7 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if redirectURL != "" {
 		cookie := &http.Cookie{
-			Name:   "auth_redirect_url",
+			Name:   authRedirectCookieName,
 			Value:  redirectURL,
 			Path:   "/",
 			MaxAge: 3600,
@@ -86,7 +97,7 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	logger.Debug("u: %s", u)
 
 	cookies := []*http.Cookie{{
-		Name:     "google_oauth_state",
+		Name:     googleOAuthStateCookieName,
 		Value:    state,
 		Path:     "/",
 		HttpOnly: true,
@@ -94,7 +105,7 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	},
 		{
-			Name:     "google_code_verifier",
+			Name:     googleCodeVerifierCookieName,
 			Value:    codeVerifier,
 			Path:     "/",
 			HttpOnly: true,
@@ -118,12 +129,12 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 
 	q := a.Queries
-	storedState, err := r.Cookie("google_oauth_state")
+	storedState, err := r.Cookie(googleOAuthStateCookieName)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting google_oauth_state. Please restart", "BAD_REQUEST")
 		return
 	}
-	storedCodeVerifier, err := r.Cookie("google_code_verifier")
+	storedCodeVerifier, err := r.Cookie(googleCodeVerifierCookieName)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting google_code_verifier. Please restart", "BAD_REQUEST")
 		return
@@ -145,8 +156,8 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Error validating authorization code: %v", err)
 		return
 	}
-	utils.RemoveCookie(w, "google_oauth_state")
-	utils.RemoveCookie(w, "google_code_verifier")
+	utils.RemoveCookie(w, googleOAuthStateCookieName)
+	utils.RemoveCookie(w, googleCodeVerifierCookieName)
 
 	token_result, err := tokens.GetTokenResult()
 	if err != nil {
@@ -197,23 +208,23 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:    "session_token",
+		Name:    sessionCookieName,
 		Value:   session_token,
 		Path:    "/",
-		Expires: time.Now().Add(time.Hour * 24 * 30),
+		Expires: time.Now().Add(sessionExpiration),
 	})
 
-	redirectURL, err := r.Cookie("auth_redirect_url")
+	redirectURL, err := r.Cookie(authRedirectCookieName)
 	if err != nil {
 		logger.Error("Error getting auth_redirect_url: %v", err)
 	}
 
 	if redirectURL != nil && redirectURL.Value != "" {
-		utils.RemoveCookie(w, "auth_redirect_url")
+		utils.RemoveCookie(w, authRedirectCookieName)
 		utils.Redirect(w, r, redirectURL.Value)
 		return
 	} else {
-		utils.Redirect(w, r, "/")
+		utils.Redirect(w, r, authRedirectDefault)
 		return
 	}
 
@@ -241,7 +252,12 @@ PORT: %d
 func (a *AuthHandlers) ValidateSessionHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	valid_session, _ := utils.ValidateSession(q, w, r)
+	valid_session, err := utils.ValidateSession(q, w, r)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusInternalServerError, "error validating session", "INTERNAL_SERVER_ERROR")
+		logger.Error("error validating session: %v", err)
+		return
+	}
 	if valid_session {
 		utils.SuccessResponse(w, "session valid")
 		return
@@ -254,7 +270,7 @@ func (a *AuthHandlers) ValidateSessionHandler(w http.ResponseWriter, r *http.Req
 func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	cookie, _ := r.Cookie("session_token")
+	cookie, _ := r.Cookie(sessionCookieName)
 	if cookie != nil {
 		err := q.DeleteSession(context.Background(), cookie.Value)
 		if err != nil {
@@ -262,7 +278,7 @@ func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Error("error logging out: %v", err)
 			return
 		}
-		utils.RemoveCookie(w, "session_token")
+		utils.RemoveCookie(w, sessionCookieName)
 	}
 
 	utils.SuccessResponse(w, "session logged out")
@@ -271,7 +287,12 @@ func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	cookie, _ := r.Cookie("session_token")
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "error getting session cookie", "BAD_REQUEST")
+		logger.Error("error getting session cookie: %v", err)
+		return
+	}
 
 	goog := NewGoogleOAuth(
 		a.Env.GetString("GOOGLE_CLIENT_ID"),
@@ -280,7 +301,12 @@ func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Reques
 		[]string{"email", "profile"},
 	)
 
-	session, _ := q.GetSessionByToken(context.Background(), cookie.Value)
+	session, err := q.GetSessionByToken(context.Background(), cookie.Value)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "error getting session", "BAD_REQUEST")
+		logger.Error("error getting session: %v", err)
+		return
+	}
 	refresh_token := session.RefreshToken.String
 	tokens, err := goog.RefreshAccessToken(refresh_token)
 	if err != nil {
@@ -311,7 +337,11 @@ func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Reques
 func (a *AuthHandlers) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	user_id := r.URL.Query().Get("user_id")
+	user_id := r.URL.Query().Get(userSessionQueryParam)
+	if user_id == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "user_id is required", "BAD_REQUEST")
+		return
+	}
 	user, err := q.GetUserByID(context.Background(), user_id)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error getting user", "INTERNAL_SERVER_ERROR")
@@ -324,7 +354,7 @@ func (a *AuthHandlers) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 func (a *AuthHandlers) GetUserSessionsHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	user_id := r.URL.Query().Get("user_id")
+	user_id := r.URL.Query().Get(userSessionQueryParam)
 	sessions, err := q.GetUserSessions(context.Background(), user_id)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error getting user sessions", "INTERNAL_SERVER_ERROR")
@@ -337,7 +367,11 @@ func (a *AuthHandlers) GetUserSessionsHandler(w http.ResponseWriter, r *http.Req
 func (a *AuthHandlers) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	user_id := r.URL.Query().Get("user_id")
+	user_id := r.URL.Query().Get(userSessionQueryParam)
+	if user_id == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "user_id is required", "BAD_REQUEST")
+		return
+	}
 	name := r.URL.Query().Get("name")
 	email := r.URL.Query().Get("email")
 	image := r.URL.Query().Get("image")
@@ -359,7 +393,7 @@ func (a *AuthHandlers) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 func (a *AuthHandlers) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	q := a.Queries
 
-	user_id := r.URL.Query().Get("user_id")
+	user_id := r.URL.Query().Get(userSessionQueryParam)
 	err := q.DeleteUser(context.Background(), user_id)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error deleting user", "INTERNAL_SERVER_ERROR")
@@ -367,4 +401,15 @@ func (a *AuthHandlers) DeleteUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	utils.SuccessResponse(w, "user deleted")
+}
+
+func (a *AuthHandlers) GetCSRFTokenHandler(w http.ResponseWriter, r *http.Request) {
+	sessionCookie, err := r.Cookie("session_token")
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusUnauthorized, "Session required", "UNAUTHORIZED")
+		return
+	}
+
+	utils.SetCSRFToken(w, sessionCookie.Value)
+	utils.SuccessResponse(w, "CSRF token set")
 }

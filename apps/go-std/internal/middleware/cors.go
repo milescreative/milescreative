@@ -1,21 +1,22 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/rs/cors"
 )
 
+// Create a single CORS handler instance
+var corsHandler = cors.New(cors.Options{
+	AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:3001"},
+	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	AllowedHeaders:   []string{"Content-Type", "X-CSRF-Token"},
+	ExposedHeaders:   []string{"X-CSRF-Token"},
+	AllowCredentials: true,
+	Debug:            false,
+})
+
+// CORS middleware that uses the pre-configured handler
 func CORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Enabling CORS")
-		c := cors.New(cors.Options{
-			AllowedOrigins: []string{"http://localhost:8080"}, // Only allow your Next.js app
-			AllowedMethods: []string{"GET", "POST"},           // Only allow specific methods
-			AllowedHeaders: []string{"Content-Type"},          // Only allow specific headers
-			Debug:          true,                              // Enable debugging for development
-		})
-		c.Handler(next).ServeHTTP(w, r)
-	})
+	return corsHandler.Handler(next)
 }

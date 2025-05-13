@@ -78,6 +78,13 @@ func UnexpectedError(w http.ResponseWriter, message string) {
 }
 
 func Redirect(w http.ResponseWriter, r *http.Request, targetPath string) {
+	// Try to parse the targetPath as a URL
+	if parsedURL, err := url.Parse(targetPath); err == nil && parsedURL.Host != "" {
+		// If it's a valid URL with a host, redirect directly
+		http.Redirect(w, r, targetPath, http.StatusTemporaryRedirect)
+		return
+	}
+
 	// Get the scheme and host from the request
 	scheme := "http"
 	if r.TLS != nil {

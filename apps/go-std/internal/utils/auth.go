@@ -19,7 +19,12 @@ import (
 
 var secret = []byte("NK9LELM2XGM89R5XYJ6S====")
 
-func GenerateCSRFToken(sessionId string) (string, []byte) {
+const (
+	CsrfCookieName = "csrf_token"
+	CsrfHeaderName = "X-CSRF-Token"
+)
+
+func GenerateCSRFToken(sessionId string) (string, string) {
 
 	csrfToken, err := GenerateRandomString()
 	if err != nil {
@@ -28,16 +33,34 @@ func GenerateCSRFToken(sessionId string) (string, []byte) {
 	mac := hmac.New(sha256.New, secret)
 	mac.Write([]byte(csrfToken + "." + sessionId))
 	csrfTokenHMAC := mac.Sum(nil)
-	return csrfToken, csrfTokenHMAC
+	return csrfToken, EncodeBase64UrlNoPadding(csrfTokenHMAC)
 }
 
-func VerifyCSRFToken(token string, sessionId string, storedHMAC []byte) bool {
+func VerifyCSRFToken(token string, sessionId string, storedHMAC string) bool {
+	decodedHMAC, err := DecodeBase64UrlNoPadding(storedHMAC)
+	if err != nil {
+		return false
+	}
 	mac := hmac.New(sha256.New, secret)
 	mac.Write([]byte(token + "." + sessionId))
 	expectedHMAC := mac.Sum(nil)
 	log.Println("expectedHMAC: ", expectedHMAC)
 	log.Println("storedHMAC: ", storedHMAC)
-	return hmac.Equal(storedHMAC, expectedHMAC)
+	return hmac.Equal(decodedHMAC, expectedHMAC)
+}
+
+// SetCSRFToken sets a new CSRF token in the response
+func SetCSRFToken(w http.ResponseWriter, sessionId string) {
+	token, encodedHMAC := GenerateCSRFToken(sessionId)
+	log.Println("encodedHMAC: ", encodedHMAC)
+	http.SetCookie(w, &http.Cookie{
+		Name:   CsrfCookieName,
+		Value:  encodedHMAC,
+		Path:   "/",
+		MaxAge: 3600,
+	})
+	// Return the token to be used in the X-CSRF-Token header
+	w.Header().Set(CsrfHeaderName, token)
 }
 
 func GenerateSessionToken() (string, error) {

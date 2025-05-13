@@ -21,6 +21,10 @@ func EncodeBase64UrlNoPadding(data []byte) string {
 	return base64.RawURLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
 }
 
+func DecodeBase64UrlNoPadding(data string) ([]byte, error) {
+	return base64.RawURLEncoding.WithPadding(base64.NoPadding).DecodeString(data)
+}
+
 func GenerateRandomStringNoPadding() (string, error) {
 	bytes := make([]byte, 15)
 	_, err := rand.Read(bytes)
