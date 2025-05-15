@@ -4,6 +4,11 @@ import {  useState } from 'react'
 import csrfStore from '../data/store'
 import SomeTest from '../components/ui/some-test'
 import * as cache from '../data/cache'
+import * as myAtom from '../data/atom'
+
+
+
+
 
 export const Route = createFileRoute('/auth')({
   component: RouteComponent,
@@ -69,8 +74,11 @@ function RouteComponent() {
 
 
   const handleCSRFProtectedApiCall = async (endpoint: string, method: string = 'POST') => {
-    const csrfToken = csrfStore.get()
-    const csrfToken2 = cache.get()
+    // const csrfToken = csrfStore.get()
+    // const csrfToken2 = cache.get()
+    const csrfToken3 = myAtom.csrfStore.get()
+
+    myAtom.csrfStore.off();
     setLoading(true)
     try {
       // if (!csrfQuery.data) {
@@ -81,14 +89,14 @@ function RouteComponent() {
       //   }
       // }
 
-      console.log('csrfToken', csrfToken)
+      // console.log('csrfToken', csrfToken)
 
       const response = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
         method,
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken2 || '',
+          'X-CSRF-Token': csrfToken3 || '',
         },
       })
       const data = await response.json()

@@ -11,9 +11,9 @@ onMount(csrfStore, () => {
     .then(data => csrfStore.set(data))
 })
 
-csrfStore.listen(() => {
-  const data = csrfStore.get()
-  console.log('New data:', data)
-})
+// csrfStore.listen(() => {
+//   const data = csrfStore.get()
+//   console.log('New data:', data)
+// })
 
 export default csrfStore

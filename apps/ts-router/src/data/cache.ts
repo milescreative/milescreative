@@ -32,6 +32,6 @@ function mount() {
 
 mount(); // auto-fetch once on import
 
-listen((val:string | null) => {
-  console.log('New CSRF token test:', val);
-});
+// listen((val:string | null) => {
+//   console.log('New CSRF token test:', val);
+// });
