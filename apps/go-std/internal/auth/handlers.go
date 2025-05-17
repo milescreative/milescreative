@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go-std/internal/config"
 	"go-std/internal/utils"
@@ -412,4 +413,28 @@ func (a *AuthHandlers) GetCSRFTokenHandler(w http.ResponseWriter, r *http.Reques
 
 	utils.SetCSRFToken(w, sessionCookie.Value)
 	utils.SuccessResponse(w, "CSRF token set")
+}
+
+func (a *AuthHandlers) TestFormHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		utils.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed", "METHOD_NOT_ALLOWED")
+		return
+	}
+
+	// Parse the JSON body
+	var formData struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body", "BAD_REQUEST")
+		return
+	}
+
+	// Log the form data
+	logger.Debug("Received form data: %+v", formData)
+
+	// Return the form data in the response
+	utils.SuccessResponse(w, formData)
 }

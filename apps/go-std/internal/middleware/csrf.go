@@ -22,14 +22,14 @@ func CSRFMiddleware(next http.Handler) http.Handler {
 		// Get session ID from session cookie
 		sessionCookie, err := r.Cookie("session_token")
 		if err != nil {
-			http.Error(w, "Session required for CSRF protection", http.StatusForbidden)
+			utils.ErrorResponse(w, http.StatusForbidden, "Session required for CSRF protection", "SESSION_REQUIRED")
 			return
 		}
 
 		// Get CSRF token from header
 		token := r.Header.Get(csrfHeaderName)
 		if token == "" {
-			http.Error(w, "CSRF token missing from header", http.StatusForbidden)
+			utils.ErrorResponse(w, http.StatusForbidden, "CSRF token missing from header", "CSRF_TOKEN_MISSING")
 			return
 		}
 		//TODO add logger to app context and provide it here
@@ -38,13 +38,13 @@ func CSRFMiddleware(next http.Handler) http.Handler {
 		// Get stored HMAC from cookie
 		csrfCookie, err := r.Cookie(csrfCookieName)
 		if err != nil {
-			http.Error(w, "CSRF token missing", http.StatusForbidden)
+			utils.ErrorResponse(w, http.StatusForbidden, "CSRF token missing", "CSRF_TOKEN_MISSING")
 			return
 		}
 
 		// Verify CSRF token
 		if !utils.VerifyCSRFToken(token, sessionCookie.Value, csrfCookie.Value) {
-			http.Error(w, "CSRF token mismatch", http.StatusForbidden)
+			utils.ErrorResponse(w, http.StatusForbidden, "CSRF token mismatch", "CSRF_TOKEN_MISMATCH")
 			return
 		}
 

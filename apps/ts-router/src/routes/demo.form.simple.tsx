@@ -3,6 +3,8 @@ import { z } from 'zod'
 
 import { useAppForm } from '../hooks/demo.form'
 
+import { safeFetch } from '@milescreative/helpers'
+
 export const Route = createFileRoute('/demo/form/simple')({
   component: SimpleForm,
 })
@@ -16,15 +18,19 @@ function SimpleForm() {
   const form = useAppForm({
     defaultValues: {
       title: '',
-      description: '',
+      description: ''
     },
     validators: {
       onBlur: schema,
     },
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       console.log(value)
       // Show success message
-      alert('Form submitted successfully!')
+      const post = await safeFetch('http://localhost:3000/api/auth/test-form', {
+        body: JSON.stringify(value),
+      })
+      const res = await post.json()
+      console.log('res',res)
     },
   })
 
@@ -44,6 +50,8 @@ function SimpleForm() {
             form.handleSubmit()
           }}
           className="space-y-6"
+          method="POST"
+          encType={'multipart/form-data'}
         >
           <form.AppField name="title">
             {(field) => <field.TextField label="Title" />}

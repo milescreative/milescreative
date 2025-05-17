@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("/api/auth/protected", protected(someProtectedHandler))
 
 	mux.HandleFunc("/api/auth/csrf", authHandlers.GetCSRFTokenHandler)
+	mux.Handle("/api/auth/test-form", middlewareStack(middleware.CSRFMiddleware(http.HandlerFunc(authHandlers.TestFormHandler))))
 	mux.Handle("/api/auth/csrf-protected", middlewareStack(middleware.CSRFMiddleware(http.HandlerFunc(someCSRFHandler))))
 
 	port, _ := env.GetInt("APP_PORT")

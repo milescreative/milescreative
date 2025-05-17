@@ -13,15 +13,17 @@ import { Label } from '@/components/ui/label'
 export function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext()
   return (
-    <form.Subscribe selector={(state) => state.isSubmitting}>
-      {(isSubmitting) => (
+      <form.Subscribe selector={(state) => state.isSubmitting}>
+        {(isSubmitting) => (
         <Button type="submit" disabled={isSubmitting}>
           {label}
         </Button>
       )}
     </form.Subscribe>
+
   )
 }
+
 
 function ErrorMessages({
   errors,
@@ -172,3 +174,5 @@ export function Switch({ label }: { label: string }) {
     </div>
   )
 }
+
+

@@ -1,12 +1,10 @@
 // import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router'
 import {  useState } from 'react'
-import csrfStore from '../data/store'
 import SomeTest from '../components/ui/some-test'
-import * as cache from '../data/cache'
-import * as myAtom from '../data/atom'
 
-
+import { csrfStore } from '../data/atom'
+import { safeFetch } from '@milescreative/helpers'
 
 
 
@@ -73,12 +71,12 @@ function RouteComponent() {
 
 
 
-  const handleCSRFProtectedApiCall = async (endpoint: string, method: string = 'POST') => {
+  const handleCSRFProtectedApiCall = async (endpoint: string) => {
     // const csrfToken = csrfStore.get()
     // const csrfToken2 = cache.get()
-    const csrfToken3 = myAtom.csrfStore.get()
+    const csrfToken3 = csrfStore.get()
 
-    myAtom.csrfStore.off();
+    csrfStore.off();
     setLoading(true)
     try {
       // if (!csrfQuery.data) {
@@ -91,14 +89,7 @@ function RouteComponent() {
 
       // console.log('csrfToken', csrfToken)
 
-      const response = await fetch(`http://localhost:3000/api/auth/${endpoint}`, {
-        method,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken3 || '',
-        },
-      })
+      const response = await safeFetch(`http://localhost:3000/api/auth/${endpoint}`, {}, () => csrfToken3)
       const data = await response.json()
       setResponse(JSON.stringify(data, null, 2))
       } catch (error) {
