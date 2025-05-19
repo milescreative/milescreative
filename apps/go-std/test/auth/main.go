@@ -13,6 +13,7 @@ import (
 	"go-std/internal/middleware"
 	"go-std/internal/sqlc"
 	"go-std/internal/utils"
+	"go-std/routes"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -35,25 +36,19 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	routes.AuthRoutes(mux, app)
 
 	middlewareStack := middleware.CreateStack(middleware.CORS, middleware.CSPMiddleware(isDev))
 
 	middlewareContext := middleware.NewMiddlewareContext(app)
 	protected := middlewareContext.Protected
-	authHandlers := auth.NewAuthHandlers(app)
 
-	mux.HandleFunc("/", authHandlers.EnvHandler)
-	mux.HandleFunc("/api/auth/login", authHandlers.LoginHandler)
-	mux.HandleFunc("/api/auth/callback/google", authHandlers.CallbackHandler)
-	mux.HandleFunc("/api/auth/validate", authHandlers.ValidateSessionHandler)
-	mux.HandleFunc("/api/auth/logout", authHandlers.LogoutHandler)
-	mux.HandleFunc("/api/auth/refresh", authHandlers.RefreshTokenHandler)
+	authHandlers := auth.NewAuthHandlers(app)
 
 	mux.HandleFunc("/api/auth/protected", protected(someProtectedHandler))
 
-	mux.HandleFunc("/api/auth/csrf", authHandlers.GetCSRFTokenHandler)
-	mux.Handle("/api/auth/test-form", middlewareStack(middleware.CSRFMiddleware(http.HandlerFunc(authHandlers.TestFormHandler))))
-	mux.Handle("/api/auth/csrf-protected", middlewareStack(middleware.CSRFMiddleware(http.HandlerFunc(someCSRFHandler))))
+	mux.HandleFunc("/api/auth/test-form", middlewareStack(middleware.CSRFMiddleware(authHandlers.TestFormHandler)))
+	mux.HandleFunc("/api/auth/csrf-protected", middlewareStack(middleware.CSRFMiddleware((someCSRFHandler))))
 
 	port, _ := env.GetInt("APP_PORT")
 	if port == 0 {
@@ -62,7 +57,7 @@ func main() {
 	portStr := strconv.Itoa(port)
 
 	log.Printf("Starting server on port %s (Dev Mode: %t)...", portStr, isDev)
-	err = http.ListenAndServe(":"+portStr, middlewareStack(mux))
+	err = http.ListenAndServe(":"+portStr, middlewareStack(mux.ServeHTTP))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,0 +1,5 @@
+go: downloading github.com/cosmtrek/air v1.61.7
+go: github.com/cosmtrek/air@latest: version constraints conflict:
+	github.com/cosmtrek/air@v1.61.7: parsing go.mod:
+	module declares its path as: github.com/air-verse/air
+	        but was required as: github.com/cosmtrek/air

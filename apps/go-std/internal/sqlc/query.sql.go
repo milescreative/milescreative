@@ -133,34 +133,42 @@ func (q *Queries) DeleteAuthor(ctx context.Context, id int32) error {
 	return err
 }
 
-const deleteSession = `-- name: DeleteSession :exec
+const deleteSession = `-- name: DeleteSession :one
 DELETE FROM "public"."session"
 WHERE token = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteSession(ctx context.Context, token string) error {
-	_, err := q.db.Exec(ctx, deleteSession, token)
-	return err
+func (q *Queries) DeleteSession(ctx context.Context, token string) (string, error) {
+	row := q.db.QueryRow(ctx, deleteSession, token)
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }
 
-const deleteSessionsForUser = `-- name: DeleteSessionsForUser :exec
+const deleteSessionsForUser = `-- name: DeleteSessionsForUser :one
 DELETE FROM "public"."session"
 WHERE "user_id" = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteSessionsForUser(ctx context.Context, userID string) error {
-	_, err := q.db.Exec(ctx, deleteSessionsForUser, userID)
-	return err
+func (q *Queries) DeleteSessionsForUser(ctx context.Context, userID string) (string, error) {
+	row := q.db.QueryRow(ctx, deleteSessionsForUser, userID)
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :one
 DELETE FROM "public"."user"
 WHERE id = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deleteUser, id)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, deleteUser, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getAuthor = `-- name: GetAuthor :one
@@ -345,12 +353,13 @@ func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) erro
 	return err
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUser = `-- name: UpdateUser :one
 UPDATE "public"."user"
 SET "name" = $2,
     "email" = $3,
     "image" = $4
 WHERE id = $1
+RETURNING id
 `
 
 type UpdateUserParams struct {
@@ -360,12 +369,14 @@ type UpdateUserParams struct {
 	Image pgtype.Text `db:"image" json:"image"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.Exec(ctx, updateUser,
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (string, error) {
+	row := q.db.QueryRow(ctx, updateUser,
 		arg.ID,
 		arg.Name,
 		arg.Email,
 		arg.Image,
 	)
-	return err
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }

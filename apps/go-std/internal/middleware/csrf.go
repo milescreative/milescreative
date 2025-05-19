@@ -11,11 +11,11 @@ const (
 	csrfHeaderName = utils.CsrfHeaderName
 )
 
-func CSRFMiddleware(next http.Handler) http.Handler {
+func CSRFMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Skip CSRF check for GET, HEAD, OPTIONS requests
 		if r.Method == "GET" || r.Method == "HEAD" || r.Method == "OPTIONS" {
-			next.ServeHTTP(w, r)
+			next(w, r)
 			return
 		}
 
@@ -48,6 +48,6 @@ func CSRFMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		next(w, r)
 	})
 }

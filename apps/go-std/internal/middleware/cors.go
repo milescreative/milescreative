@@ -17,6 +17,6 @@ var corsHandler = cors.New(cors.Options{
 })
 
 // CORS middleware that uses the pre-configured handler
-func CORS(next http.Handler) http.Handler {
-	return corsHandler.Handler(next)
+func CORS(next http.HandlerFunc) http.HandlerFunc {
+	return corsHandler.Handler(next).ServeHTTP
 }

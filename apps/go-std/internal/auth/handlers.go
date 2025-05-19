@@ -231,6 +231,7 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// TODO: remove this
 func (a *AuthHandlers) EnvHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	str := fmt.Sprintf(`
@@ -269,11 +270,12 @@ func (a *AuthHandlers) ValidateSessionHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+
 	q := a.Queries
 
 	cookie, _ := r.Cookie(sessionCookieName)
 	if cookie != nil {
-		err := q.DeleteSession(context.Background(), cookie.Value)
+		_, err := q.DeleteSession(context.Background(), cookie.Value)
 		if err != nil {
 			utils.ErrorResponse(w, http.StatusInternalServerError, "error logging out", "INTERNAL_SERVER_ERROR")
 			logger.Error("error logging out: %v", err)
@@ -286,6 +288,8 @@ func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	utils.PostOrBail(w, r)
+
 	q := a.Queries
 
 	cookie, err := r.Cookie(sessionCookieName)
@@ -336,6 +340,7 @@ func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (a *AuthHandlers) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	q := a.Queries
 
 	user_id := r.URL.Query().Get(userSessionQueryParam)
@@ -366,6 +371,7 @@ func (a *AuthHandlers) GetUserSessionsHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (a *AuthHandlers) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	q := a.Queries
 
 	user_id := r.URL.Query().Get(userSessionQueryParam)
@@ -377,12 +383,16 @@ func (a *AuthHandlers) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 	email := r.URL.Query().Get("email")
 	image := r.URL.Query().Get("image")
 
-	err := q.UpdateUser(context.Background(), sqlc.UpdateUserParams{
+	id, err := q.UpdateUser(context.Background(), sqlc.UpdateUserParams{
 		ID:    user_id,
 		Name:  name,
 		Email: email,
 		Image: pgtype.Text{String: image, Valid: true},
 	})
+	if id == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "user not found", "BAD_REQUEST")
+		return
+	}
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error updating user", "INTERNAL_SERVER_ERROR")
 		logger.Error("error updating user: %v", err)
@@ -392,10 +402,15 @@ func (a *AuthHandlers) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (a *AuthHandlers) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+
 	q := a.Queries
 
 	user_id := r.URL.Query().Get(userSessionQueryParam)
-	err := q.DeleteUser(context.Background(), user_id)
+	id, err := q.DeleteUser(context.Background(), user_id)
+	if id == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "user not found", "BAD_REQUEST")
+		return
+	}
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error deleting user", "INTERNAL_SERVER_ERROR")
 		logger.Error("error deleting user: %v", err)
@@ -416,6 +431,7 @@ func (a *AuthHandlers) GetCSRFTokenHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (a *AuthHandlers) TestFormHandler(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodPost {
 		utils.ErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed", "METHOD_NOT_ALLOWED")
 		return

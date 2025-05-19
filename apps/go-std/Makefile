@@ -27,3 +27,7 @@ start-cloudflared:
 
 # Run both migration and schema dump
 db-update: push-db dump-schema
+
+
+test-router:
+	go test -bench=. ./routes

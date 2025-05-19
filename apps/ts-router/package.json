@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@milescreative/helpers": "workspace:*",
+    "@milescreative/backend-sdk": "workspace:*",
     "@faker-js/faker": "^9.6.0",
     "@radix-ui/react-label": "^2.1.6",
     "@radix-ui/react-select": "^2.1.6",

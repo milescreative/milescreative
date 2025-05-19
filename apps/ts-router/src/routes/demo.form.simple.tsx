@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { useAppForm } from '../hooks/demo.form'
 
-import { safeFetch } from '@milescreative/helpers'
+import { safeFetch } from '../../../../packages/backend-sdk/src'
 
 export const Route = createFileRoute('/demo/form/simple')({
   component: SimpleForm,

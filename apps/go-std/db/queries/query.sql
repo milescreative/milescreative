@@ -80,13 +80,15 @@ WHERE session.token = $1
 LIMIT 1;
 
 
--- name: DeleteSession :exec
+-- name: DeleteSession :one
 DELETE FROM "public"."session"
-WHERE token = $1;
+WHERE token = $1
+RETURNING id;
 
--- name: DeleteSessionsForUser :exec
+-- name: DeleteSessionsForUser :one
 DELETE FROM "public"."session"
-WHERE "user_id" = $1;
+WHERE "user_id" = $1
+RETURNING id;
 
 
 -- name: UpdateAccount :exec
@@ -112,17 +114,19 @@ SELECT * FROM "public"."session"
 WHERE "user_id" = $1;
 
 
--- name: UpdateUser :exec
+-- name: UpdateUser :one
 UPDATE "public"."user"
 SET "name" = $2,
     "email" = $3,
     "image" = $4
-WHERE id = $1;
+WHERE id = $1
+RETURNING id;
 
 
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 DELETE FROM "public"."user"
-WHERE id = $1;
+WHERE id = $1
+RETURNING id;
 
 
 

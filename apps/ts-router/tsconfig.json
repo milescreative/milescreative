@@ -23,8 +23,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@milescreative/helpers/*": ["../../packages/helpers/src/*"],
-      "@milescreative/helpers": ["../../packages/helpers/src/index.ts"]
+      "@milescreative/helpers/*": ["../../packages/backend-sdk/src/*"],
+      "@milescreative/helpers": ["../../packages/backend-sdk/src/index.ts"]
     }
   }
 }

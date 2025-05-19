@@ -8,7 +8,7 @@ import (
 )
 
 // CSPMiddleware: Content Security Policy and security headers, adapts to env.
-func CSPMiddleware(isDevelopment bool) func(http.Handler) http.Handler {
+func CSPMiddleware(isDevelopment bool) func(http.HandlerFunc) http.HandlerFunc {
 	prodCspDirectives := map[string][]string{
 		"default-src": {"'none'"},
 		"script-src":  {"'self'"},
@@ -71,7 +71,7 @@ func CSPMiddleware(isDevelopment bool) func(http.Handler) http.Handler {
 	}
 	cspValue := strings.Join(policyParts, "; ")
 
-	return func(next http.Handler) http.Handler {
+	return func(next http.HandlerFunc) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Security-Policy", cspValue)
 			w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -85,7 +85,7 @@ func CSPMiddleware(isDevelopment bool) func(http.Handler) http.Handler {
 				w.Header().Set("Strict-Transport-Security", hstsValue)
 			}
 
-			next.ServeHTTP(w, r)
+			next(w, r)
 		})
 	}
 }

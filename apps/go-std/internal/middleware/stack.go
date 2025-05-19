@@ -16,10 +16,10 @@ func NewMiddlewareContext(app *config.App) *MiddlewareContext {
 	}
 }
 
-type Middleware func(http.Handler) http.Handler
+type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 func CreateStack(xs ...Middleware) Middleware {
-	return func(next http.Handler) http.Handler {
+	return func(next http.HandlerFunc) http.HandlerFunc {
 		for i := len(xs) - 1; i >= 0; i-- {
 			x := xs[i]
 			next = x(next)

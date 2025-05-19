@@ -77,6 +77,10 @@ func UnexpectedError(w http.ResponseWriter, message string) {
 	ErrorResponse(w, http.StatusInternalServerError, message, "UNEXPECTED_ERROR")
 }
 
+func MethodNotAllowed(w http.ResponseWriter, message string) {
+	ErrorResponse(w, http.StatusMethodNotAllowed, message, "METHOD_NOT_ALLOWED")
+}
+
 func Redirect(w http.ResponseWriter, r *http.Request, targetPath string) {
 	// Try to parse the targetPath as a URL
 	if parsedURL, err := url.Parse(targetPath); err == nil && parsedURL.Host != "" {
@@ -101,4 +105,18 @@ func Redirect(w http.ResponseWriter, r *http.Request, targetPath string) {
 	targetURL := baseURL.ResolveReference(&url.URL{Path: path.Join("/", targetPath)})
 
 	http.Redirect(w, r, targetURL.String(), http.StatusTemporaryRedirect)
+}
+
+func PostOrBail(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		BadRequest(w, "POST request required")
+		return
+	}
+}
+
+func DeleteOrBail(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		BadRequest(w, "DELETE request required")
+		return
+	}
 }
