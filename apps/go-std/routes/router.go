@@ -2,97 +2,71 @@ package routes
 
 import (
 	"net/http"
+	"regexp"
 
-	"go-std/internal/utils"
+	"github.com/julienschmidt/httprouter"
 )
 
-type Router struct {
+type Router_ struct {
 	mux *http.ServeMux
 }
 
-type Route struct {
-	mux      *http.ServeMux
-	path     string
-	handlers map[string]http.HandlerFunc
+type Router struct {
+	mux *httprouter.Router
 }
 
-func NewRouter(mux *http.ServeMux) *Router {
-	return &Router{mux: mux}
+func NewRouter_(mux *http.ServeMux) *Router_ {
+	return &Router_{mux: mux}
 }
 
-func (r *Router) ROUTE(path string) *Route {
-	route := &Route{
-		mux:      r.mux,
-		path:     path,
-		handlers: make(map[string]http.HandlerFunc),
+func NewRouter() *Router {
+	return &Router{mux: httprouter.New()}
+}
+
+var re = regexp.MustCompile(`\{(\w+)\}`)
+
+// wraps a httprouter function to make it more like std
+func w(h http.HandlerFunc) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		for _, param := range p {
+			r.SetPathValue(param.Key, param.Value)
+		}
+		h.ServeHTTP(w, r)
 	}
-
-	r.mux.HandleFunc(path, route.dispatch)
-	return route
 }
 
-// dispatch is the single handler registered with ServeMux, it dispatches based on HTTP method
-func (ri *Route) dispatch(w http.ResponseWriter, r *http.Request) {
-	handler, ok := ri.handlers[r.Method]
-	if !ok {
-		utils.MethodNotAllowed(w, "Method not allowed")
-		return
-	}
-
-	handler(w, r)
+func (r *Router) GET_(path string, handler http.HandlerFunc) {
+	// newpath := re.ReplaceAllString(path, `:$1`)
+	r.mux.GET(path, w(handler))
 }
 
-func (ri *Route) GET(handler http.HandlerFunc) *Route {
-	ri.handlers[http.MethodGet] = _get(handler)
-	return ri
+func (r *Router) POST_(path string, handler http.HandlerFunc) {
+	// newpath := re.ReplaceAllString(path, `:$1`)
+	r.mux.POST(path, w(handler))
 }
 
-func (ri *Route) POST(handler http.HandlerFunc) *Route {
-	ri.handlers[http.MethodPost] = _post(handler)
-	return ri
+func (r *Router) PUT_(path string, handler http.HandlerFunc) {
+	// newpath := re.ReplaceAllString(path, `:$1`)
+	r.mux.PUT(path, w(handler))
 }
 
-func (ri *Route) DELETE(handler http.HandlerFunc) *Route {
-	ri.handlers[http.MethodDelete] = _delete(handler)
-	return ri
+func (r *Router) DELETE_(path string, handler http.HandlerFunc) {
+	// newpath := re.ReplaceAllString(path, `:$1`)
+	r.mux.DELETE(path, w(handler))
 }
 
-func _get(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet && r.Method != "" {
-			utils.MethodNotAllowed(w, "GET request should be used for this route.")
-			//still continue on GET
-		}
-		next(w, r)
-	})
+func (r *Router_) GET(path string, handler http.HandlerFunc) {
+	r.mux.HandleFunc("GET "+path, handler)
 }
 
-func _post(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			utils.MethodNotAllowed(w, "POST request required")
-			return
-		}
-		next(w, r)
-	})
+func (r *Router_) POST(path string, handler http.HandlerFunc) {
+	r.mux.HandleFunc("POST "+path, handler)
 }
 
-func _delete(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodDelete {
-			utils.MethodNotAllowed(w, "DELETE request required")
-			return
-		}
-		next(w, r)
-	})
+func (r *Router_) PUT(path string, handler http.HandlerFunc) {
+	r.mux.HandleFunc("PUT "+path, handler)
 }
 
-func ROOT(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			utils.NotFound(w, "Not found")
-			return
-		}
-		next(w, r)
-	})
+func (r *Router_) DELETE(path string, handler http.HandlerFunc) {
+	r.mux.HandleFunc("DELETE "+path, handler)
 }

@@ -31,3 +31,5 @@ db-update: push-db dump-schema
 
 test-router:
 	go test -bench=. ./routes
+test-github:
+	go test -tags=benchmark -bench=Benchmark.*_GithubAll -benchmem ./routes

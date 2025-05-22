@@ -1,7 +1,7 @@
 [build]
   args_bin = []
-  bin = "./tmp/test/auth/main" # Output executable for the auth test
-  cmd = "go build -o ./tmp/test/auth/main ./test/auth/main.go" # Build the auth test
+  bin = "./tmp/test/router/main" # Output executable for the auth test
+  cmd = "go build -o ./tmp/test/router/main ./test/router/main.go" # Build the auth test
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   # exclude_file = []

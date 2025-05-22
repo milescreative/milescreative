@@ -8,24 +8,23 @@ import (
 
 func AuthRoutes(mux *http.ServeMux, app *config.App) {
 
-	router := NewRouter(mux)
-	r := router.ROUTE
+	router := NewRouter_(mux)
+	r := router
 
 	a := auth.NewAuthHandlers(app)
 
 	//todo: move to root
-	r("/").GET(ROOT(a.EnvHandler))
+	r.GET("/{$}", a.EnvHandler)
 
-	r("/api/auth/login/google").GET(a.LoginHandler)
-	r("/api/auth/callback/google").GET(a.CallbackHandler)
-	r("/api/auth/validate").GET(a.ValidateSessionHandler)
-	r("/api/auth/refresh").POST(a.RefreshTokenHandler)
-	r("/api/auth/logout").POST(a.LogoutHandler)
-	r("/api/auth/csrf").GET(a.GetCSRFTokenHandler)
-	r("/api/auth/user").
-		GET(a.GetUserHandler).
-		POST(a.UpdateUserHandler).
-		DELETE(a.DeleteUserHandler)
-	r("/api/auth/sessions").GET(a.GetUserSessionsHandler)
+	r.GET("/api/auth/login/google", a.LoginHandler)
+	r.GET("/api/auth/callback/google", a.CallbackHandler)
+	r.GET("/api/auth/validate", a.ValidateSessionHandler)
+	r.POST("/api/auth/refresh", a.RefreshTokenHandler)
+	r.POST("/api/auth/logout", a.LogoutHandler)
+	r.GET("/api/auth/csrf", a.GetCSRFTokenHandler)
+	r.GET("/api/auth/user", a.GetUserHandler)
+	r.POST("/api/auth/user", a.UpdateUserHandler)
+	r.DELETE("/api/auth/user", a.DeleteUserHandler)
+	r.GET("/api/auth/sessions", a.GetUserSessionsHandler)
 
 }
