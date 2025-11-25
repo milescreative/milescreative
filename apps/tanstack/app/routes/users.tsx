@@ -6,6 +6,7 @@ import type { User } from '../utils/users'
 
 export const Route = createFileRoute('/users')({
   loader: async () => {
+    console.log('DEPLOY_URL', DEPLOY_URL)
     return await axios
       .get<Array<User>>(DEPLOY_URL + '/api/users')
       .then((r) => r.data)

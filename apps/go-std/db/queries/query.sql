@@ -73,7 +73,7 @@ new_session;
 
 
 -- name: GetSessionByToken :one
-SELECT session.*, account.refresh_token FROM "public"."session" session
+SELECT session.*, account.refresh_token, account.provider_id FROM "public"."session" session
 INNER JOIN public.user  ON session.user_id = "user".id
 INNER JOIN public.account account ON session.account_id = account.id
 WHERE session.token = $1
@@ -130,3 +130,5 @@ RETURNING id;
 
 
 
+-- name: TestDatabaseConnection :one
+SELECT NOW();

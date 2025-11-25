@@ -107,7 +107,7 @@ func NewOAuth2Tokens(body []byte) (*OAuth2Tokens, error) {
 	if err := json.Unmarshal(body, &t.Data); err != nil {
 		return nil, err
 	}
-	fmt.Println("*******tokens: ", t.Data)
+	// fmt.Println("*******tokens: ", t.Data)
 	return &t, nil
 }
 
@@ -188,47 +188,56 @@ type TokenResult struct {
 func (t *OAuth2Tokens) GetTokenResult() (TokenResult, error) {
 	result := TokenResult{}
 
-	// Access Token
+	// Access Token (required)
 	accessToken, err := t.AccessToken()
 	if err != nil {
 		return result, fmt.Errorf("access_token: %w", err)
 	}
 	result.AccessToken = accessToken
 
-	// Refresh Token
-	refreshToken, err := t.RefreshToken()
-	if err != nil {
-		return result, fmt.Errorf("refresh_token: %w", err)
+	// Refresh Token (optional)
+	if t.HasRefreshToken() {
+		refreshToken, err := t.RefreshToken()
+		if err == nil {
+			result.RefreshToken = refreshToken
+		}
 	}
-	result.RefreshToken = refreshToken
 
-	// ID Token
-	idToken, err := t.IDToken()
-	if err != nil {
-		return result, fmt.Errorf("id_token: %w", err)
+	// ID Token (optional)
+	if t.HasIDToken() {
+		idToken, err := t.IDToken()
+		if err == nil {
+			result.IDToken = idToken
+		}
 	}
-	result.IDToken = idToken
 
-	// Scopes
-	scopes, err := t.Scopes()
-	if err != nil {
-		return result, fmt.Errorf("scope: %w", err)
+	// Scopes (optional)
+	if t.HasScopes() {
+		scopes, err := t.Scopes()
+		if err == nil {
+			result.Scopes = scopes
+		}
 	}
-	result.Scopes = scopes
 
-	// Expires At
+	// Expires At (optional)
 	expiresAt, err := t.AccessTokenExpiresAt()
-	if err != nil {
-		return result, fmt.Errorf("expires_in: %w", err)
+	if err == nil {
+		result.AccessTokenExpiresAt = expiresAt
 	}
-	result.AccessTokenExpiresAt = expiresAt
 
 	return result, nil
+}
+
+// Add helper methods to check for optional fields
+func (t *OAuth2Tokens) HasIDToken() bool {
+	_, ok := t.Data["id_token"].(string)
+	return ok
 }
 
 var logger = NewLogger(DEBUG, true)
 
 func ValidateSession(q *sqlc.Queries, w http.ResponseWriter, r *http.Request) (bool, error) {
+	logger.Debug("ValidateSession")
 	cookie, _ := r.Cookie("session_token")
 
 	if cookie != nil {

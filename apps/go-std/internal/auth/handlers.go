@@ -20,31 +20,59 @@ var logger = utils.NewLogger(utils.DEBUG, true)
 
 type AuthHandlers struct {
 	*config.App
+	SessionCookieName           string
+	SessionExpiration           time.Duration
+	AuthRedirectQueryParam      string
+	AuthRedirectCookieName      string
+	AuthRedirectDefault         string
+	OAuthStateCookieName        string
+	OAuthCodeVerifierCookieName string
+	UserSessionQueryParam       string
+	ProviderRegistry            *ProviderRegistry
 }
 
 const (
-	sessionCookieName            = "session_token"
-	sessionExpiration            = time.Hour * 24 * 30
-	authRedirectQueryParam       = "redirect_url"
-	authRedirectCookieName       = "auth_redirect_url"
-	authRedirectDefault          = "/"
-	googleOAuthStateCookieName   = "google_oauth_state"
-	googleCodeVerifierCookieName = "google_code_verifier"
-	userSessionQueryParam        = "user_session"
+	sessionCookieName           = "session_token"
+	sessionExpiration           = time.Hour * 24 * 30
+	authRedirectQueryParam      = "redirect_url"
+	authRedirectCookieName      = "auth_redirect_url"
+	authRedirectDefault         = "/"
+	oauthStateCookieName        = "oauth_state"
+	oauthCodeVerifierCookieName = "oauth_code_verifier"
+	userSessionQueryParam       = "user_session"
 )
 
-func NewAuthHandlers(app *config.App) *AuthHandlers {
-	return &AuthHandlers{
-		App: app,
+func NewAuthHandlers(app *config.App) (*AuthHandlers, error) {
+	registry, err := NewProviderRegistry(app)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create provider registry: %w", err)
 	}
+
+	return &AuthHandlers{
+		App:                         app,
+		SessionCookieName:           sessionCookieName,
+		SessionExpiration:           sessionExpiration,
+		AuthRedirectQueryParam:      authRedirectQueryParam,
+		AuthRedirectCookieName:      authRedirectCookieName,
+		AuthRedirectDefault:         authRedirectDefault,
+		OAuthStateCookieName:        oauthStateCookieName,
+		OAuthCodeVerifierCookieName: oauthCodeVerifierCookieName,
+		UserSessionQueryParam:       userSessionQueryParam,
+		ProviderRegistry:            registry,
+	}, nil
 }
 
 func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
+	provider := r.PathValue("provider")
+	if provider == "" {
+		provider = "google" // default provider
+	}
+
 	q := a.Queries
-	redirectURL := r.URL.Query().Get(authRedirectQueryParam)
+	redirectURL := r.URL.Query().Get(a.AuthRedirectQueryParam)
 	if redirectURL == "" {
-		redirectURL = authRedirectDefault
+		redirectURL = a.AuthRedirectDefault
 	}
 
 	// check if user is already logged in
@@ -56,7 +84,7 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if redirectURL != "" {
 		cookie := &http.Cookie{
-			Name:   authRedirectCookieName,
+			Name:   a.AuthRedirectCookieName,
 			Value:  redirectURL,
 			Path:   "/",
 			MaxAge: 3600,
@@ -70,7 +98,7 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "Error generating state", "INTERNAL_SERVER_ERROR")
 		return
 	}
-	logger.Debug("state: %s", state)
+	// logger.Debug("state: %s", state)
 
 	codeVerifier, err := utils.GenerateCodeVerifier()
 	if err != nil {
@@ -78,27 +106,27 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "Error generating codeVerifier", "INTERNAL_SERVER_ERROR")
 		return
 	}
-	logger.Debug("codeVerifier: %s", codeVerifier)
+	// logger.Debug("codeVerifier: %s", codeVerifier)
 
-	isDev := a.IsDev
+	// Create OAuth provider
+	oauthProvider, err := a.ProviderRegistry.CreateProvider(provider)
+	if err != nil {
+		logger.Error("Error creating OAuth provider: %v", err)
+		utils.ErrorResponse(w, http.StatusBadRequest, "Unsupported provider", "BAD_REQUEST")
+		return
+	}
 
-	goog := NewGoogleOAuth(
-		a.Env.GetString("GOOGLE_CLIENT_ID"),
-		a.Env.GetString("GOOGLE_CLIENT_SECRET"),
-		a.Env.GetString("GOOGLE_REDIRECT_URI"),
-		[]string{"email", "profile"},
-	)
-
-	u, err := goog.CreateAuthorizationURLWithPKCE(state, codeVerifier)
+	authURL, err := oauthProvider.CreateAuthorizationURL(state, codeVerifier)
 	if err != nil {
 		logger.Error("Error creating authorization URL: %v", err)
 		utils.ErrorResponse(w, http.StatusInternalServerError, "Error creating authorization URL", "INTERNAL_SERVER_ERROR")
 		return
 	}
-	logger.Debug("u: %s", u)
+
+	isDev := a.IsDev
 
 	cookies := []*http.Cookie{{
-		Name:     googleOAuthStateCookieName,
+		Name:     a.OAuthStateCookieName,
 		Value:    state,
 		Path:     "/",
 		HttpOnly: true,
@@ -106,8 +134,16 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	},
 		{
-			Name:     googleCodeVerifierCookieName,
+			Name:     a.OAuthCodeVerifierCookieName,
 			Value:    codeVerifier,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   !isDev,
+			SameSite: http.SameSiteLaxMode,
+		},
+		{
+			Name:     "oauth_provider",
+			Value:    provider,
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   !isDev,
@@ -118,9 +154,9 @@ func (a *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, c)
 	}
 
-	logger.Debug("login creation success- redirecting to: %s", u)
+	// logger.Debug("login creation success- redirecting to: %s", authURL)
 	// utils.SuccessResponse(w, u)
-	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+	http.Redirect(w, r, authURL.String(), http.StatusSeeOther)
 
 }
 
@@ -130,14 +166,32 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 
 	q := a.Queries
-	storedState, err := r.Cookie(googleOAuthStateCookieName)
+	storedState, err := r.Cookie(a.OAuthStateCookieName)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting google_oauth_state. Please restart", "BAD_REQUEST")
+		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting oauth_state. Please restart", "BAD_REQUEST")
 		return
 	}
-	storedCodeVerifier, err := r.Cookie(googleCodeVerifierCookieName)
+	storedCodeVerifier, err := r.Cookie(a.OAuthCodeVerifierCookieName)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting google_code_verifier. Please restart", "BAD_REQUEST")
+		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting oauth_code_verifier. Please restart", "BAD_REQUEST")
+		return
+	}
+
+	provider := r.PathValue("provider")
+	if provider == "" {
+		provider = r.URL.Query().Get("provider")
+	}
+	if provider == "" {
+		providerCookie, err := r.Cookie("oauth_provider")
+		if err != nil {
+			utils.ErrorResponse(w, http.StatusBadRequest, "Error getting oauth_provider. Please restart", "BAD_REQUEST")
+			return
+		}
+		provider = providerCookie.Value
+	}
+
+	if provider == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting provider. Please restart", "BAD_REQUEST")
 		return
 	}
 
@@ -145,32 +199,38 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorResponse(w, http.StatusBadRequest, "state mismatch- please restart", "BAD_REQUEST")
 		return
 	}
-	goog := NewGoogleOAuth(
-		a.Env.GetString("GOOGLE_CLIENT_ID"),
-		a.Env.GetString("GOOGLE_CLIENT_SECRET"),
-		a.Env.GetString("GOOGLE_REDIRECT_URI"),
-		[]string{"email", "profile"},
-	)
-	tokens, err := goog.ValidateAuthorizationCode(code, storedCodeVerifier.Value)
+	// Create OAuth provider
+	oauthProvider, err := a.ProviderRegistry.CreateProvider(provider)
+	if err != nil {
+		logger.Error("Error creating OAuth provider: %v", err)
+		utils.ErrorResponse(w, http.StatusBadRequest, "Unsupported provider", "BAD_REQUEST")
+		return
+	}
+
+	tokens, err := oauthProvider.ValidateAuthorizationCode(code, storedCodeVerifier.Value)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "Error validating authorization code. Please restart", "BAD_REQUEST")
 		logger.Error("Error validating authorization code: %v", err)
 		return
 	}
-	utils.RemoveCookie(w, googleOAuthStateCookieName)
-	utils.RemoveCookie(w, googleCodeVerifierCookieName)
+
+	// Clean up cookies
+	utils.RemoveCookie(w, a.OAuthStateCookieName)
+	utils.RemoveCookie(w, a.OAuthCodeVerifierCookieName)
+	utils.RemoveCookie(w, "oauth_provider")
+
+	// Get user info from provider
+	userInfo, err := oauthProvider.GetUserInfo(tokens)
+	if err != nil {
+		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting user info", "BAD_REQUEST")
+		logger.Error("Error getting user info: %v", err)
+		return
+	}
 
 	token_result, err := tokens.GetTokenResult()
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "Error getting token result", "BAD_REQUEST")
 		logger.Error("Error getting token result: %v", err)
-		return
-	}
-
-	claims, err := utils.DecodeJwt(token_result.IDToken)
-	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "Error decoding idToken", "BAD_REQUEST")
-		logger.Error("Error decoding idToken: %v", err)
 		return
 	}
 
@@ -185,12 +245,12 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, thisErr := q.CreateNewUser(context.Background(), sqlc.CreateNewUserParams{
-		Name:                 claims["name"].(string),
-		Email:                claims["email"].(string),
-		EmailVerified:        claims["email_verified"].(bool),
-		Image:                pgtype.Text{String: claims["picture"].(string), Valid: true},
-		AccountID:            claims["sub"].(string),
-		ProviderID:           "google",
+		Name:                 userInfo.Name,
+		Email:                userInfo.Email,
+		EmailVerified:        userInfo.EmailVerified,
+		Image:                pgtype.Text{String: userInfo.Picture, Valid: true},
+		AccountID:            userInfo.ID,
+		ProviderID:           oauthProvider.GetProviderName(),
 		Scope:                pgtype.Text{String: strings.Join(token_result.Scopes, " "), Valid: true},
 		AccessToken:          pgtype.Text{String: token_result.AccessToken, Valid: true},
 		RefreshToken:         pgtype.Text{String: token_result.RefreshToken, Valid: true},
@@ -231,27 +291,8 @@ func (a *AuthHandlers) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// TODO: remove this
-func (a *AuthHandlers) EnvHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	str := fmt.Sprintf(`
-        <h1>Environment Variables</h1>
-        <pre>
-APP_ENV: %s
-GOOGLE_CLIENT_ID: %s
-GOOGLE_CLIENT_SECRET: %s
-GOOGLE_REDIRECT_URI: %s
-PORT: %d
-    `, a.Env.GetString("APP_ENV"),
-		a.Env.GetString("GOOGLE_CLIENT_ID"),
-		a.Env.GetString("GOOGLE_CLIENT_SECRET"),
-		a.Env.GetString("GOOGLE_REDIRECT_URI"),
-		a.Env.Port(),
-	)
-	utils.SuccessResponse(w, str)
-}
-
 func (a *AuthHandlers) ValidateSessionHandler(w http.ResponseWriter, r *http.Request) {
+	logger.Debug("ValidateSessionHandler")
 	q := a.Queries
 
 	valid_session, err := utils.ValidateSession(q, w, r)
@@ -288,8 +329,6 @@ func (a *AuthHandlers) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
-	utils.PostOrBail(w, r)
-
 	q := a.Queries
 
 	cookie, err := r.Cookie(sessionCookieName)
@@ -299,36 +338,58 @@ func (a *AuthHandlers) RefreshTokenHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	goog := NewGoogleOAuth(
-		a.Env.GetString("GOOGLE_CLIENT_ID"),
-		a.Env.GetString("GOOGLE_CLIENT_SECRET"),
-		a.Env.GetString("GOOGLE_REDIRECT_URI"),
-		[]string{"email", "profile"},
-	)
-
 	session, err := q.GetSessionByToken(context.Background(), cookie.Value)
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusBadRequest, "error getting session", "BAD_REQUEST")
 		logger.Error("error getting session: %v", err)
 		return
 	}
-	refresh_token := session.RefreshToken.String
-	tokens, err := goog.RefreshAccessToken(refresh_token)
+
+	// Get the provider from the session
+	providerName := session.ProviderID
+	if providerName == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "no provider found for session", "BAD_REQUEST")
+		logger.Error("no provider found for session")
+		return
+	}
+
+	// Create OAuth provider
+	oauthProvider, err := a.ProviderRegistry.CreateProvider(providerName)
 	if err != nil {
-		utils.ErrorResponse(w, http.StatusBadRequest, "error refreshing access token", "BAD_REQUEST")
+		logger.Error("Error creating OAuth provider: %v", err)
+		utils.ErrorResponse(w, http.StatusBadRequest, "Unsupported provider", "BAD_REQUEST")
+		return
+	}
+
+	// Check if provider supports refresh tokens
+	refreshToken := session.RefreshToken.String
+	if refreshToken == "" {
+		utils.ErrorResponse(w, http.StatusBadRequest, "no refresh token available", "BAD_REQUEST")
+		logger.Error("no refresh token available for session")
+		return
+	}
+
+	tokens, err := oauthProvider.RefreshAccessToken(refreshToken)
+	if err != nil {
+		// Handle provider-specific errors (like GitHub not supporting refresh)
+		if providerName == "github" {
+			utils.ErrorResponse(w, http.StatusBadRequest, "GitHub tokens do not expire and cannot be refreshed", "BAD_REQUEST")
+		} else {
+			utils.ErrorResponse(w, http.StatusBadRequest, "error refreshing access token", "BAD_REQUEST")
+		}
 		logger.Error("error refreshing access token: %v", err)
 		return
 	}
 
-	access_token, _ := tokens.AccessToken()
-	id_token, _ := tokens.IDToken()
-	expires_at, _ := tokens.AccessTokenExpiresAt()
+	accessToken, _ := tokens.AccessToken()
+	idToken, _ := tokens.IDToken()
+	expiresAt, _ := tokens.AccessTokenExpiresAt()
 
 	err = q.UpdateAccount(context.Background(), sqlc.UpdateAccountParams{
 		AccountID:            session.AccountID.String,
-		AccessToken:          pgtype.Text{String: access_token, Valid: true},
-		IDToken:              pgtype.Text{String: id_token, Valid: true},
-		AccessTokenExpiresAt: pgtype.Timestamp{Time: expires_at, Valid: true},
+		AccessToken:          pgtype.Text{String: accessToken, Valid: true},
+		IDToken:              pgtype.Text{String: idToken, Valid: true},
+		AccessTokenExpiresAt: pgtype.Timestamp{Time: expiresAt, Valid: true},
 	})
 	if err != nil {
 		utils.ErrorResponse(w, http.StatusInternalServerError, "error updating account", "INTERNAL_SERVER_ERROR")

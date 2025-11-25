@@ -1,10 +1,31 @@
 {
-  "extends": "@milescreative/typescript-config/vite.json",
   "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
-    }
+      "~/*": ["./app/*"],
+      "@milescreative/logger/*": ["../../packages/logger/src/*"],
+      "@milescreative/logger": ["../../packages/logger/src/index.ts"],
+      "@milescreative/db/*": ["../../packages/db/src/*"],
+      "@milescreative/db": ["../../packages/db/src/index.ts"],
+      "@milescreative/rate-limiter/*": ["../../packages/_rate-limiter/src/*"],
+      "@milescreative/rate-limiter": [
+        "../../packages/_rate-limiter/src/index.ts"
+      ]
+    },
+    "noEmit": true,
+    "strictNullChecks": true
   }
 }

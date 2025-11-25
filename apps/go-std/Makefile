@@ -30,6 +30,9 @@ db-update: push-db dump-schema
 
 
 test-router:
-	go test -bench=. ./routes
+	go test -bench=.*Path -v ./routes
 test-github:
 	go test -tags=benchmark -bench=Benchmark.*_GithubAll -benchmem ./routes
+
+
+# GOPROXY=direct go get github.com/g-h-miles/httprouter-gm@v0.0.1

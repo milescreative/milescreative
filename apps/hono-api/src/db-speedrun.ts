@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks'
 import { Database } from 'bun:sqlite'
 import { Redis } from 'ioredis'
 
-const redis = new Redis(4545, 'milescreative-s1', {
+const redis = new Redis(4545, '192.168.1.50', {
   username: 'default',
   password: 'TuryEACRshgH2TzF10uXqFZA1qZTHDy2ESO02AZudzJllzpvmKdrEbrxgSizlWAT',
 })
@@ -20,7 +20,7 @@ db.run(`
 
 async function simulateConcurrentRedis(
   totalRequests: number,
-  concurrentUsers: number
+  concurrentUsers: number,
 ) {
   const start = performance.now()
   const requestsPerUser = Math.floor(totalRequests / concurrentUsers)
@@ -30,10 +30,14 @@ async function simulateConcurrentRedis(
     async (_, userIndex) => {
       const key = `test-user-${userIndex}`
       const requests = Array.from({ length: requestsPerUser }, () =>
-        redis.multi().incr(`${key}:count`).pexpire(`${key}:count`, 60000).exec()
+        redis
+          .multi()
+          .incr(`${key}:count`)
+          .pexpire(`${key}:count`, 60000)
+          .exec(),
       )
       await Promise.all(requests)
-    }
+    },
   )
 
   await Promise.all(userPromises)
@@ -48,7 +52,7 @@ async function simulateConcurrentRedis(
 
 function simulateConcurrentSQLite(
   totalRequests: number,
-  concurrentUsers: number
+  concurrentUsers: number,
 ) {
   const start = performance.now()
   const requestsPerUser = Math.floor(totalRequests / concurrentUsers)
@@ -87,7 +91,7 @@ async function runBenchmark() {
 
   for (const { requests, users } of scenarios) {
     console.log(
-      `\nScenario: ${requests} requests with ${users} concurrent users`
+      `\nScenario: ${requests} requests with ${users} concurrent users`,
     )
     console.log('----------------------------------------')
 
@@ -103,7 +107,7 @@ async function runBenchmark() {
     console.log('\nSQLite Results:')
     console.log(`Total time: ${sqliteResults.totalTime.toFixed(2)}s`)
     console.log(
-      `Requests/second: ${sqliteResults.requestsPerSecond.toFixed(2)}`
+      `Requests/second: ${sqliteResults.requestsPerSecond.toFixed(2)}`,
     )
     console.log(`Avg latency: ${sqliteResults.avgLatencyMs.toFixed(2)}ms`)
   }

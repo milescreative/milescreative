@@ -184,7 +184,7 @@ func (q *Queries) GetAuthor(ctx context.Context, id int32) (Author, error) {
 }
 
 const getSessionByToken = `-- name: GetSessionByToken :one
-SELECT session.id, session.expires_at, session.token, session.created_at, session.updated_at, session.ip_address, session.user_agent, session.user_id, session.account_id, account.refresh_token FROM "public"."session" session
+SELECT session.id, session.expires_at, session.token, session.created_at, session.updated_at, session.ip_address, session.user_agent, session.user_id, session.account_id, account.refresh_token, account.provider_id FROM "public"."session" session
 INNER JOIN public.user  ON session.user_id = "user".id
 INNER JOIN public.account account ON session.account_id = account.id
 WHERE session.token = $1
@@ -202,6 +202,7 @@ type GetSessionByTokenRow struct {
 	UserID       string           `db:"user_id" json:"user_id"`
 	AccountID    pgtype.Text      `db:"account_id" json:"account_id"`
 	RefreshToken pgtype.Text      `db:"refresh_token" json:"refresh_token"`
+	ProviderID   string           `db:"provider_id" json:"provider_id"`
 }
 
 func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessionByTokenRow, error) {
@@ -218,6 +219,7 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessi
 		&i.UserID,
 		&i.AccountID,
 		&i.RefreshToken,
+		&i.ProviderID,
 	)
 	return i, err
 }
@@ -301,6 +303,17 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const testDatabaseConnection = `-- name: TestDatabaseConnection :one
+SELECT NOW()
+`
+
+func (q *Queries) TestDatabaseConnection(ctx context.Context) (interface{}, error) {
+	row := q.db.QueryRow(ctx, testDatabaseConnection)
+	var now interface{}
+	err := row.Scan(&now)
+	return now, err
 }
 
 const updateAccount = `-- name: UpdateAccount :exec

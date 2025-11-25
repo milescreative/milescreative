@@ -18,8 +18,5 @@
     "@types/bun": "^1.2.4",
     "eslint": "^9.21.0",
     "typescript": "^5.8.2"
-  },
-  "engines": {
-    "bun": ">=1.0.0"
   }
 }

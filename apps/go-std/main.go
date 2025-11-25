@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"go-std/internal/middleware"
-	ratelimit "go-std/internal/middleware/rate-limit"
 	"go-std/internal/utils"
 	"log"
 	"net/http"
@@ -36,8 +35,6 @@ func main() {
 	})
 
 	stack := middleware.CreateStack(
-		middleware.Logging,
-		middleware.TokenBucket(5, 1, "test"),
 		middleware.CORS,
 	)
 
@@ -46,21 +43,17 @@ func main() {
 	})
 
 	router.HandleFunc("GET /test-rate", func(w http.ResponseWriter, r *http.Request) {
-		storeSize := ratelimit.GetStoreSize()
-		log.Printf("Rate limit test hit: %s, Store size: %d", r.URL.Path, storeSize)
 
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]interface{}{
-			"message":    "Rate limit test successful",
-			"store_size": storeSize,
-			"store_keys": ratelimit.GetStoreKeys(),
+			"message": "Rate limit test successful",
 		}
 		json.NewEncoder(w).Encode(response)
 	})
 
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: stack(router),
+		Handler: stack(router.ServeHTTP),
 	}
 
 	log.Println("Starting server on port 8080")

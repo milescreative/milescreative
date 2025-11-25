@@ -11,7 +11,7 @@ export default defineConfig({
       tailwindcss(),
     ],
     define: {
-      process: {},
+      'process.env': JSON.stringify(process.env),
     },
   },
 })

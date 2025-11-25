@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"go-std/internal/config"
 	"go-std/internal/utils"
 	"io"
 	"net/http"
@@ -10,53 +11,71 @@ import (
 )
 
 const (
-	authorizationEndpoint   = "https://accounts.google.com/o/oauth2/v2/auth"
-	tokenEndpoint           = "https://oauth2.googleapis.com/token"
-	tokenRevocationEndpoint = "https://oauth2.googleapis.com/revoke"
+	googleAuthEndpoint   = "https://accounts.google.com/o/oauth2/v2/auth"
+	googleTokenEndpoint  = "https://oauth2.googleapis.com/token"
+	googleRevokeEndpoint = "https://oauth2.googleapis.com/revoke"
 )
 
-type GoogleOAuth struct {
-	clientID     string
-	clientSecret string
-	redirectURI  string
-	scopes       []string
+type GoogleProvider struct {
+	config ProviderConfig
 }
 
-func NewGoogleOAuth(clientID string, clientSecret string, redirectURI string, scopes []string) *GoogleOAuth {
-	return &GoogleOAuth{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		redirectURI:  redirectURI,
-		scopes:       scopes,
+func NewGoogleProvider(app *config.App) (OAuthProvider, error) {
+	clientID := app.Env.GetString("GOOGLE_CLIENT_ID")
+	clientSecret := app.Env.GetString("GOOGLE_CLIENT_SECRET")
+	redirectURI := app.Env.GetString("GOOGLE_REDIRECT_URI")
+
+	// Validate required fields
+	if clientID == "" {
+		return nil, fmt.Errorf("GOOGLE_CLIENT_ID is required")
 	}
+	if clientSecret == "" {
+		return nil, fmt.Errorf("GOOGLE_CLIENT_SECRET is required")
+	}
+	if redirectURI == "" {
+		return nil, fmt.Errorf("GOOGLE_REDIRECT_URI is required")
+	}
+
+	config := ProviderConfig{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURI:  redirectURI,
+		Scopes:       []string{"email", "profile"},
+	}
+
+	return &GoogleProvider{config: config}, nil
 }
 
-func (o *GoogleOAuth) CreateAuthorizationURLWithPKCE(state string, codeVerifier string) (*url.URL, error) {
+func (p *GoogleProvider) GetProviderName() string {
+	return "google"
+}
+
+func (p *GoogleProvider) CreateAuthorizationURL(state string, codeVerifier string) (*url.URL, error) {
 
 	var queryParams url.Values = url.Values{
 		"response_type":         {"code"},
-		"client_id":             {o.clientID},
+		"client_id":             {p.config.ClientID},
 		"state":                 {state},
 		"code_challenge":        {utils.CreateS256CodeChallenge(codeVerifier)},
 		"code_challenge_method": {"S256"},
-		"scope":                 {o.Scopes()},
+		"scope":                 {p.scopesString()},
 		"access_type":           {"offline"},
 		"prompt":                {"consent"},
 	}
-	if o.redirectURI != "" {
-		queryParams.Set("redirect_uri", o.redirectURI)
+	if p.config.RedirectURI != "" {
+		queryParams.Set("redirect_uri", p.config.RedirectURI)
 	}
 
-	url_, err := url.Parse(authorizationEndpoint)
+	authURL, err := url.Parse(googleAuthEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse authorization endpoint: %w", err)
 	}
 
-	url_.RawQuery = queryParams.Encode()
-	return url_, nil
+	authURL.RawQuery = queryParams.Encode()
+	return authURL, nil
 }
 
-func (o *GoogleOAuth) ValidateAuthorizationCode(code string, codeVerifier string) (*utils.OAuth2Tokens, error) {
+func (p *GoogleProvider) ValidateAuthorizationCode(code string, codeVerifier string) (*utils.OAuth2Tokens, error) {
 
 	var queryParams url.Values = url.Values{
 		"grant_type": {"authorization_code"},
@@ -65,15 +84,13 @@ func (o *GoogleOAuth) ValidateAuthorizationCode(code string, codeVerifier string
 	if codeVerifier != "" {
 		queryParams.Set("code_verifier", codeVerifier)
 	}
-	if o.redirectURI != "" {
-		queryParams.Set("redirect_uri", o.redirectURI)
+	if p.config.RedirectURI != "" {
+		queryParams.Set("redirect_uri", p.config.RedirectURI)
 	}
-	resp_body, err := o.AuthFetch(tokenEndpoint, queryParams)
+	resp_body, err := p.authFetch(googleTokenEndpoint, queryParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate authorization code: %w", err)
 	}
-
-	fmt.Println("token endpoint response:", string(resp_body))
 
 	tokens, err := utils.NewOAuth2Tokens(resp_body)
 	if err != nil {
@@ -83,15 +100,15 @@ func (o *GoogleOAuth) ValidateAuthorizationCode(code string, codeVerifier string
 	return tokens, nil
 }
 
-func (o *GoogleOAuth) RefreshAccessToken(refreshToken string) (*utils.OAuth2Tokens, error) {
+func (p *GoogleProvider) RefreshAccessToken(refreshToken string) (*utils.OAuth2Tokens, error) {
 	var queryParams url.Values = url.Values{
 		"grant_type":    {"refresh_token"},
 		"refresh_token": {refreshToken},
 	}
-	if o.Scopes() != "" {
-		queryParams.Set("scope", o.Scopes())
+	if p.scopesString() != "" {
+		queryParams.Set("scope", p.scopesString())
 	}
-	resp_body, err := o.AuthFetch(tokenEndpoint, queryParams)
+	resp_body, err := p.authFetch(googleTokenEndpoint, queryParams)
 	fmt.Println("refresh token response:", string(resp_body))
 
 	if err != nil {
@@ -106,9 +123,9 @@ func (o *GoogleOAuth) RefreshAccessToken(refreshToken string) (*utils.OAuth2Toke
 	return tokens, nil
 }
 
-func (o *GoogleOAuth) RevokeToken(token string) error {
+func (p *GoogleProvider) RevokeToken(token string) error {
 
-	_, err := o.AuthFetch(tokenRevocationEndpoint,
+	_, err := p.authFetch(googleRevokeEndpoint,
 		url.Values{
 			"token": {token},
 		},
@@ -121,20 +138,40 @@ func (o *GoogleOAuth) RevokeToken(token string) error {
 
 }
 
-func (o *GoogleOAuth) AuthFetch(endpoint string, queryParams url.Values) ([]byte, error) {
-	url_, err := url.Parse(endpoint)
+func (p *GoogleProvider) GetUserInfo(tokens *utils.OAuth2Tokens) (UserInfo, error) {
+	tokenResult, err := tokens.GetTokenResult()
+	if err != nil {
+		return UserInfo{}, fmt.Errorf("failed to get token result: %w", err)
+	}
+
+	claims, err := utils.DecodeJwt(tokenResult.IDToken)
+	if err != nil {
+		return UserInfo{}, fmt.Errorf("failed to decode ID token: %w", err)
+	}
+
+	return UserInfo{
+		ID:            claims["sub"].(string),
+		Email:         claims["email"].(string),
+		Name:          claims["name"].(string),
+		Picture:       claims["picture"].(string),
+		EmailVerified: claims["email_verified"].(bool),
+	}, nil
+}
+
+func (p *GoogleProvider) authFetch(endpoint string, queryParams url.Values) ([]byte, error) {
+	endpointURL, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse endpoint: %w", err)
 	}
 
-	url_.RawQuery = queryParams.Encode()
-	if o.clientSecret == "" {
-		queryParams.Set("client_id", o.clientID)
+	endpointURL.RawQuery = queryParams.Encode()
+	if p.config.ClientSecret == "" {
+		queryParams.Set("client_id", p.config.ClientID)
 	}
 
 	body := strings.NewReader(queryParams.Encode())
 
-	req, err := http.NewRequest("POST", url_.String(), body)
+	req, err := http.NewRequest("POST", endpointURL.String(), body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -143,8 +180,8 @@ func (o *GoogleOAuth) AuthFetch(endpoint string, queryParams url.Values) ([]byte
 	req.Header.Set("User-Agent", "miles-creative")
 	req.Header.Set("Content-Length", fmt.Sprintf("%d", body.Size()))
 
-	if o.clientSecret != "" {
-		encodedCredentials := utils.EncodeBasicCredentials(o.clientID, o.clientSecret)
+	if p.config.ClientSecret != "" {
+		encodedCredentials := utils.EncodeBasicCredentials(p.config.ClientID, p.config.ClientSecret)
 		req.Header.Set("Authorization", "Basic "+encodedCredentials)
 	}
 
@@ -166,10 +203,6 @@ func (o *GoogleOAuth) AuthFetch(endpoint string, queryParams url.Values) ([]byte
 	return resp_body, nil
 }
 
-func (o *GoogleOAuth) Scopes() string {
-	var scopeString string
-	for _, scope := range o.scopes {
-		scopeString += scope + " "
-	}
-	return scopeString
+func (p *GoogleProvider) scopesString() string {
+	return strings.Join(p.config.Scopes, " ")
 }

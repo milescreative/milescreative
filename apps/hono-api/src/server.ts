@@ -1,5 +1,6 @@
-import { test_result } from '@milescreative/db'
-import { log } from '@milescreative/logger'
+// import { test_result } from '@milescreative/db'
+import { test_result } from '@milescreative/db/test'
+// import { log } from '@milescreative/logger'
 import {
   FixedWindowRateLimiter,
   getClientIp,
@@ -41,21 +42,24 @@ export const createServer = (): Hono => {
       if (!ip) {
         return c.json({ message: 'No IP address found' }, 400)
       }
-      const isAllowed = await tokenBucketRateLimiter.isAllowed(ip)
-      if (!isAllowed) {
-        return c.json(
-          { message: 'User rate limit exceeded. Please try again later.' },
-          429
-        )
-      }
-      const global_isAllowed = await leakyBucketRateLimiter.isAllowed('')
-      if (!global_isAllowed) {
-        return c.json(
-          { message: 'Experiencing high load, please try again later' },
-          429
-        )
-      }
+      // const isAllowed = await tokenBucketRateLimiter.isAllowed(ip)
+      // if (!isAllowed) {
+      //   return c.json(
+      //     { message: 'User rate limit exceeded. Please try again later.' },
+      //     429,
+      //   )
+      // }
+      // const global_isAllowed = await leakyBucketRateLimiter.isAllowed('')
+      // if (!global_isAllowed) {
+      //   return c.json(
+      //     { message: 'Experiencing high load, please try again later' },
+      //     429,
+      //   )
+      // }
       return next()
+    })
+    .get('/', (c) => {
+      return c.json({ message: 'Hello World' })
     })
     .get('/message/:name', (c) => {
       const name = c.req.param('name')
